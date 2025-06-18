@@ -1156,14 +1156,11 @@ function waitForGSAP() {
       });
     });
 
-    // Tab content initial styles
+    // Tab content initial styles (visible by default, but script will hide as needed)
     document.querySelectorAll('.tab-content').forEach(content => {
       Object.assign(content.style, {
-        height: '0',
-        overflow: 'hidden',
         transition: 'height 0.5s cubic-bezier(0,.12,0,.99)',
         transformOrigin: 'top',
-        transform: 'scaleY(0)'
       });
     });
 
@@ -1172,6 +1169,7 @@ function waitForGSAP() {
     tabs.forEach(tab => {
       const header = tab.querySelector('h4');
       const content = tab.querySelector('.tab-content');
+      const textPs = tab.querySelectorAll('.text-content p');
       header.addEventListener('click', () => {
         if (tab.classList.contains('active')) return;
         // Deactivate all tabs
@@ -1180,22 +1178,39 @@ function waitForGSAP() {
           const otherContent = otherTab.querySelector('.tab-content');
           if (otherContent) {
             Object.assign(otherContent.style, {
-              height: '0',
-              overflow: 'hidden',
+              display: 'none',
+              height: '',
               paddingTop: '',
-              transform: 'scaleY(0)'
+              transform: '',
             });
           }
+          // Reset text-content p styles
+          otherTab.querySelectorAll('.text-content p').forEach(p => {
+            p.style.opacity = '1';
+            p.style.transform = 'translateY(0)';
+          });
         });
         // Activate clicked tab
         tab.classList.add('active');
         if (content) {
           Object.assign(content.style, {
+            display: '', // revert to default
             height: 'auto',
             paddingTop: '2vw',
-            transform: 'scaleY(1)'
+            transform: '',
           });
         }
+        // Animate .text-content p
+        textPs.forEach((p, i) => {
+          p.style.opacity = '0';
+          p.style.transform = 'translateY(20px)';
+          p.style.transition = 'none';
+          setTimeout(() => {
+            p.style.transition = 'all 0.5s cubic-bezier(0,.12,0,.99)';
+            p.style.opacity = '1';
+            p.style.transform = 'translateY(0)';
+          }, 50 + i * 80);
+        });
       });
     });
   });
