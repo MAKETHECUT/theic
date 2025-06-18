@@ -1758,19 +1758,6 @@ video {
   transform: translateY(-50%) rotate(90deg);
 }
 
-.faq-content {
-  padding: 0 1.5rem;
-  max-height: 0;
-  overflow: hidden;
-  transition: all 0.5s ease;
-}
-
-.faq-item.active .faq-content {
-  padding: 1.5rem;
-  max-height: fit-content;
-  transition: all 0.25s ease;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .faq-grid {
