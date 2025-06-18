@@ -1580,14 +1580,6 @@ video {
   color: var(--yellow);
 }
 
-.tab-content {
-  /* No hiding styles here. Always visible by default. */
-}
-
-.text-content {
-  /* Always visible by default. */
-}
-
 .image-content {
   position: absolute;
   right: 10vw;
@@ -1661,9 +1653,8 @@ video {
 
 /* Animation for text */
 .text-content p {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.5s cubic-bezier(0,.12,0,.99);
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .tab.active .text-content p {
