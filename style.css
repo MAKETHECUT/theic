@@ -1580,6 +1580,24 @@ video {
   color: var(--yellow);
 }
 
+.tab-content {
+  transform-origin: top;
+}
+
+.tab.active .tab-content {
+  padding-top: 2vw;
+}
+
+.tab-container {
+  display: grid;
+  grid-gap: 2.5vw;
+  width:60%;
+}
+
+.text-content {
+  width: 100%;
+}
+
 .image-content {
   position: absolute;
   right: 10vw;
@@ -1601,7 +1619,6 @@ video {
   pointer-events: none;
   transition: opacity 0.6s cubic-bezier(.76,0,0,.99), transform 0.6s cubic-bezier(.76,0,0,.99);
 }
-
 
 .tab-image.active {
   opacity: 1;
@@ -1653,8 +1670,9 @@ video {
 
 /* Animation for text */
 .text-content p {
-  opacity: 1;
-  transform: translateY(0);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.5s cubic-bezier(0,.12,0,.99);
 }
 
 .tab.active .text-content p {
@@ -1731,6 +1749,19 @@ video {
 
 .faq-item.active .horizontal {
   transform: translateY(-50%) rotate(90deg);
+}
+
+.faq-content {
+  padding: 0 1.5rem;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+.faq-item.active .faq-content {
+  padding: 1.5rem;
+  max-height: fit-content;
+  transition: all 0.25s ease;
 }
 
 /* Responsive Design */
