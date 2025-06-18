@@ -1580,8 +1580,12 @@ video {
   color: var(--yellow);
 }
 
+.tab-content {
+  /* No hiding styles here. Always visible by default. */
+}
+
 .text-content {
-  width: 100%;
+  /* Always visible by default. */
 }
 
 .image-content {
