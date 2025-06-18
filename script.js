@@ -1145,3 +1145,57 @@ function waitForGSAP() {
   
     new CustomSmoothScroll();
   });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Tab container grid styles
+    document.querySelectorAll('.tab-container').forEach(container => {
+      Object.assign(container.style, {
+        display: 'grid',
+        gridGap: window.innerWidth < 768 ? '10vw' : '2.5vw',
+        width: window.innerWidth < 768 ? '100%' : '60%'
+      });
+    });
+
+    // Tab content initial styles
+    document.querySelectorAll('.tab-content').forEach(content => {
+      Object.assign(content.style, {
+        height: '0',
+        overflow: 'hidden',
+        transition: 'height 0.5s cubic-bezier(0,.12,0,.99)',
+        transformOrigin: 'top',
+        transform: 'scaleY(0)'
+      });
+    });
+
+    // Tab activation logic
+    const tabs = document.querySelectorAll('.tab-accordion .tab');
+    tabs.forEach(tab => {
+      const header = tab.querySelector('h4');
+      const content = tab.querySelector('.tab-content');
+      header.addEventListener('click', () => {
+        if (tab.classList.contains('active')) return;
+        // Deactivate all tabs
+        tabs.forEach(otherTab => {
+          otherTab.classList.remove('active');
+          const otherContent = otherTab.querySelector('.tab-content');
+          if (otherContent) {
+            Object.assign(otherContent.style, {
+              height: '0',
+              overflow: 'hidden',
+              paddingTop: '',
+              transform: 'scaleY(0)'
+            });
+          }
+        });
+        // Activate clicked tab
+        tab.classList.add('active');
+        if (content) {
+          Object.assign(content.style, {
+            height: 'auto',
+            paddingTop: '2vw',
+            transform: 'scaleY(1)'
+          });
+        }
+      });
+    });
+  });
