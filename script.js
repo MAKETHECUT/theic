@@ -395,17 +395,13 @@ function waitForGSAP() {
           const content = item.querySelector('.faq-content');
           const header = item.querySelector('.faq-header');
           
-          // Set initial styles through JavaScript - exactly as they were in CSS
-          content.style.maxHeight = '0';
-          content.style.padding = '0 1.5rem';
-          content.style.overflow = 'hidden';
-          content.style.transition = 'all 0.5s ease';
-          
-          // Open first FAQ item by default
+          // Hide all FAQ items except the first one
           if (index === 0) {
               item.classList.add('active');
-              content.style.maxHeight = 'fit-content';
-              content.style.padding = '1.5rem';
+          } else {
+              content.style.maxHeight = '0';
+              content.style.padding = '0 1.5rem';
+              content.style.overflow = 'hidden';
           }
           
           header.addEventListener('click', () => {
@@ -447,28 +443,26 @@ function waitForGSAP() {
           const content = tab.querySelector('.tab-content');
           const header = tab.querySelector('h4');
           
-          // Set initial styles through JavaScript - exactly as they were in CSS
-          content.style.height = '0';
-          content.style.overflow = 'hidden';
-          content.style.transform = 'scaleY(0)';
-          content.style.transformOrigin = 'top';
-          content.style.transition = 'height 0.5s cubic-bezier(0,.12,0,.99), transform 0.5s cubic-bezier(0,.12,0,.99)';
-          
-          // Open first tab by default
+          // Hide all tabs except the first one
           if (index === 0) {
               tab.classList.add('active');
-              content.style.height = 'auto';
-              content.style.paddingTop = '2vw';
-              content.style.transform = 'scaleY(1)';
-              
-              // Set first image as active
-              const tabNumber = tab.getAttribute('data-tab');
-              accordionImages.forEach(img => {
-                  if (img.getAttribute('data-tab') === tabNumber) {
-                      img.classList.add('active');
-                  }
-              });
+          } else {
+              content.style.height = '0';
+              content.style.overflow = 'hidden';
+              content.style.transform = 'scaleY(0)';
           }
+          
+          // Set initial state for images
+          const tabNumber = tab.getAttribute('data-tab');
+          accordionImages.forEach(img => {
+              if (img.getAttribute('data-tab') === tabNumber && index === 0) {
+                  img.classList.add('active');
+              } else {
+                  img.style.opacity = '0';
+                  img.style.transform = 'scale(0)';
+                  img.style.pointerEvents = 'none';
+              }
+          });
           
           header.addEventListener('click', () => {
               // If clicking the active tab, do nothing
@@ -495,8 +489,14 @@ function waitForGSAP() {
               accordionImages.forEach(img => {
                   if (img.getAttribute('data-tab') === tabNumber) {
                       img.classList.add('active');
+                      img.style.opacity = '1';
+                      img.style.transform = 'scale(1)';
+                      img.style.pointerEvents = 'auto';
                   } else {
                       img.classList.remove('active');
+                      img.style.opacity = '0';
+                      img.style.transform = 'scale(0)';
+                      img.style.pointerEvents = 'none';
                   }
               });
           });
