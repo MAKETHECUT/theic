@@ -1164,6 +1164,12 @@ function waitForGSAP() {
       });
     });
 
+    // Hide all .text-content p inside .tab-content by default
+    document.querySelectorAll('.tab-content .text-content p').forEach(p => {
+      p.style.opacity = '0';
+      p.style.transform = 'translateY(20px)';
+    });
+
     // Tab activation logic
     const tabs = document.querySelectorAll('.tab-accordion .tab');
     tabs.forEach(tab => {
@@ -1184,10 +1190,10 @@ function waitForGSAP() {
               transform: '',
             });
           }
-          // Reset text-content p styles
+          // Reset text-content p styles (hide)
           otherTab.querySelectorAll('.text-content p').forEach(p => {
-            p.style.opacity = '1';
-            p.style.transform = 'translateY(0)';
+            p.style.opacity = '0';
+            p.style.transform = 'translateY(20px)';
           });
         });
         // Activate clicked tab
@@ -1202,9 +1208,6 @@ function waitForGSAP() {
         }
         // Animate .text-content p
         textPs.forEach((p, i) => {
-          p.style.opacity = '0';
-          p.style.transform = 'translateY(20px)';
-          p.style.transition = 'none';
           setTimeout(() => {
             p.style.transition = 'all 0.5s cubic-bezier(0,.12,0,.99)';
             p.style.opacity = '1';
