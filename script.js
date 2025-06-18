@@ -694,21 +694,28 @@ function waitForGSAP() {
             opacity: 1
           });
   
-          gsap.to(split.lines, {
-            yPercent: 0,
-            clipPath: "inset(-20% -10% -20% 0%)",
-            opacity: 1,
-            stagger: 0.12,
-            duration: 1.6,
-            delay: el.closest(".hero") ? masterDelay : 0,
-            ease: "power3.out",
+          const tl = gsap.timeline({
             scrollTrigger: {
               trigger: el,
               start: window.innerWidth < 768 ? "top 80%" : "top 100%",
               end: "bottom 100%",
               toggleActions: "play none none none",
               once: true
+            },
+            paused: true,
+            onComplete: () => {
+              split.revert();
             }
+          });
+  
+          tl.to(split.lines, {
+            yPercent: 0,
+            clipPath: "inset(-20% -10% -20% 0%)",
+            opacity: 1,
+            stagger: 0.12,
+            duration: 1.6,
+            delay: el.closest(".hero") ? masterDelay : 0,
+            ease: "power3.out"
           });
   
           if (el.closest(".hero")) masterDelay += 0.25;
