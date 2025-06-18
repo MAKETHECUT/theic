@@ -390,41 +390,40 @@ function waitForGSAP() {
   document.addEventListener('DOMContentLoaded', () => {
       const faqItems = document.querySelectorAll('.faq-item');
       
-      faqItems.forEach(item => {
+      // Set initial state for all FAQ items
+      faqItems.forEach((item, index) => {
           const content = item.querySelector('.faq-content');
-          // Set initial styles for all faq-content
-          Object.assign(content.style, {
-              padding: "0 1.5rem",
-              maxHeight: "0",
-              overflow: "hidden",
-              transition: "all 0.5s ease"
-          });
-  
           const header = item.querySelector('.faq-header');
+          
+          // Set initial styles through JavaScript - exactly as they were in CSS
+          content.style.maxHeight = '0';
+          content.style.padding = '0 1.5rem';
+          content.style.overflow = 'hidden';
+          content.style.transition = 'all 0.5s ease';
+          
+          // Open first FAQ item by default
+          if (index === 0) {
+              item.classList.add('active');
+              content.style.maxHeight = 'fit-content';
+              content.style.padding = '1.5rem';
+          }
+          
           header.addEventListener('click', () => {
               const isActive = item.classList.contains('active');
-  
+              
               // Close all items first
               faqItems.forEach(otherItem => {
-                  otherItem.classList.remove('active');
                   const otherContent = otherItem.querySelector('.faq-content');
-                  Object.assign(otherContent.style, {
-                      padding: "0 1.5rem",
-                      maxHeight: "0",
-                      overflow: "hidden",
-                      transition: "all 0.5s ease"
-                  });
+                  otherItem.classList.remove('active');
+                  otherContent.style.maxHeight = '0';
+                  otherContent.style.padding = '0 1.5rem';
               });
-  
+              
               // If the clicked item wasn't active, open it
               if (!isActive) {
                   item.classList.add('active');
-                  Object.assign(content.style, {
-                      padding: "1.5rem",
-                      maxHeight: content.scrollHeight + "px",
-                      overflow: "visible",
-                      transition: "all 0.25s ease"
-                  });
+                  content.style.maxHeight = 'fit-content';
+                  content.style.padding = '1.5rem';
               }
           });
       });
@@ -443,8 +442,33 @@ function waitForGSAP() {
       const accordionTabs = document.querySelectorAll('.tab-accordion .tab');
       const accordionImages = document.querySelectorAll('.tab-accordion .tab-image');
       
-      accordionTabs.forEach(tab => {
+      // Set initial state for all tabs
+      accordionTabs.forEach((tab, index) => {
+          const content = tab.querySelector('.tab-content');
           const header = tab.querySelector('h4');
+          
+          // Set initial styles through JavaScript - exactly as they were in CSS
+          content.style.height = '0';
+          content.style.overflow = 'hidden';
+          content.style.transform = 'scaleY(0)';
+          content.style.transformOrigin = 'top';
+          content.style.transition = 'height 0.5s cubic-bezier(0,.12,0,.99), transform 0.5s cubic-bezier(0,.12,0,.99)';
+          
+          // Open first tab by default
+          if (index === 0) {
+              tab.classList.add('active');
+              content.style.height = 'auto';
+              content.style.paddingTop = '2vw';
+              content.style.transform = 'scaleY(1)';
+              
+              // Set first image as active
+              const tabNumber = tab.getAttribute('data-tab');
+              accordionImages.forEach(img => {
+                  if (img.getAttribute('data-tab') === tabNumber) {
+                      img.classList.add('active');
+                  }
+              });
+          }
           
           header.addEventListener('click', () => {
               // If clicking the active tab, do nothing
@@ -454,11 +478,17 @@ function waitForGSAP() {
               
               // Close all other tabs
               accordionTabs.forEach(otherTab => {
+                  const otherContent = otherTab.querySelector('.tab-content');
                   otherTab.classList.remove('active');
+                  otherContent.style.height = '0';
+                  otherContent.style.transform = 'scaleY(0)';
               });
               
               // Open the clicked tab
               tab.classList.add('active');
+              content.style.height = 'auto';
+              content.style.paddingTop = '2vw';
+              content.style.transform = 'scaleY(1)';
               
               // Update images
               const tabNumber = tab.getAttribute('data-tab');
@@ -694,28 +724,21 @@ function waitForGSAP() {
             opacity: 1
           });
   
-          const tl = gsap.timeline({
-            scrollTrigger: {
-              trigger: el,
-              start: window.innerWidth < 768 ? "top 80%" : "top 100%",
-              end: "bottom 100%",
-              toggleActions: "play none none none",
-              once: true
-            },
-            paused: true,
-            onComplete: () => {
-              split.revert();
-            }
-          });
-  
-          tl.to(split.lines, {
+          gsap.to(split.lines, {
             yPercent: 0,
             clipPath: "inset(-20% -10% -20% 0%)",
             opacity: 1,
             stagger: 0.12,
             duration: 1.6,
             delay: el.closest(".hero") ? masterDelay : 0,
-            ease: "power3.out"
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: el,
+              start: window.innerWidth < 768 ? "top 80%" : "top 100%",
+              end: "bottom 100%",
+              toggleActions: "play none none none",
+              once: true
+            }
           });
   
           if (el.closest(".hero")) masterDelay += 0.25;
@@ -1145,75 +1168,7 @@ function waitForGSAP() {
   
     new CustomSmoothScroll();
   });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    // Tab container grid styles
-    document.querySelectorAll('.tab-container').forEach(container => {
-      Object.assign(container.style, {
-        display: 'grid',
-        gridGap: window.innerWidth < 768 ? '10vw' : '2.5vw',
-        width: window.innerWidth < 768 ? '100%' : '60%'
-      });
-    });
-
-    // Tab content initial styles (visible by default, but script will hide as needed)
-    document.querySelectorAll('.tab-content').forEach(content => {
-      Object.assign(content.style, {
-        transition: 'height 0.5s cubic-bezier(0,.12,0,.99)',
-        transformOrigin: 'top',
-      });
-    });
-
-    // Hide all .text-content p inside .tab-content by default
-    document.querySelectorAll('.tab-content .text-content p').forEach(p => {
-      p.style.opacity = '0';
-      p.style.transform = 'translateY(20px)';
-    });
-
-    // Tab activation logic
-    const tabs = document.querySelectorAll('.tab-accordion .tab');
-    tabs.forEach(tab => {
-      const header = tab.querySelector('h4');
-      const content = tab.querySelector('.tab-content');
-      const textPs = tab.querySelectorAll('.text-content p');
-      header.addEventListener('click', () => {
-        if (tab.classList.contains('active')) return;
-        // Deactivate all tabs
-        tabs.forEach(otherTab => {
-          otherTab.classList.remove('active');
-          const otherContent = otherTab.querySelector('.tab-content');
-          if (otherContent) {
-            Object.assign(otherContent.style, {
-              display: 'none',
-              height: '',
-              paddingTop: '',
-              transform: '',
-            });
-          }
-          // Reset text-content p styles (hide)
-          otherTab.querySelectorAll('.text-content p').forEach(p => {
-            p.style.opacity = '0';
-            p.style.transform = 'translateY(20px)';
-          });
-        });
-        // Activate clicked tab
-        tab.classList.add('active');
-        if (content) {
-          Object.assign(content.style, {
-            display: '', // revert to default
-            height: 'auto',
-            paddingTop: '2vw',
-            transform: '',
-          });
-        }
-        // Animate .text-content p
-        textPs.forEach((p, i) => {
-          setTimeout(() => {
-            p.style.transition = 'all 0.5s cubic-bezier(0,.12,0,.99)';
-            p.style.opacity = '1';
-            p.style.transform = 'translateY(0)';
-          }, 50 + i * 80);
-        });
-      });
-    });
-  });
+  
+  
+  
+  
