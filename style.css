@@ -1580,26 +1580,6 @@ video {
   color: var(--yellow);
 }
 
-.tab-content {
-  height: 0;
-  overflow: hidden;
-  transition: height 0.5s cubic-bezier(0,.12,0,.99);
-  transform-origin: top;
-  transform: scaleY(0);
-}
-
-.tab-container {
-  display: grid;
-  grid-gap: 2.5vw;
-  width:60%;
-}
-
-.tab.active .tab-content {
-  height: auto;
-  padding-top:2vw;
-  transform: scaleY(1);
-}
-
 .text-content {
   width: 100%;
 }
