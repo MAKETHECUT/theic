@@ -1,3 +1,13 @@
+window.history.scrollRestoration = "manual";
+
+window.addEventListener("beforeunload", () => {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+});
+
+
+
 // Wait for GSAP and plugins to be fully loaded
 function waitForGSAP() {
     return new Promise((resolve) => {
@@ -81,6 +91,8 @@ function waitForGSAP() {
       initializeSmoothScroll();
       initializeGridOverlay();
       initializeResponsiveBehavior();
+
+      
   
     } catch (error) {
       console.error('Error during page initialization:', error);
@@ -458,9 +470,7 @@ function waitForGSAP() {
               if (img.getAttribute('data-tab') === tabNumber && index === 0) {
                   img.classList.add('active');
               } else {
-                  img.style.opacity = '0';
-                  img.style.transform = 'scale(0)';
-                  img.style.pointerEvents = 'none';
+                  img.classList.remove('active');
               }
           });
           
@@ -484,21 +494,28 @@ function waitForGSAP() {
               content.style.paddingTop = '2vw';
               content.style.transform = 'scaleY(1)';
               
-              // Update images
+              // Animate tab images with GSAP
               const tabNumber = tab.getAttribute('data-tab');
+              let currentActiveImg = null;
+              let nextActiveImg = null;
               accordionImages.forEach(img => {
+                  if (img.classList.contains('active')) {
+                      currentActiveImg = img;
+                  }
                   if (img.getAttribute('data-tab') === tabNumber) {
-                      img.classList.add('active');
-                      img.style.opacity = '1';
-                      img.style.transform = 'scale(1)';
-                      img.style.pointerEvents = 'auto';
-                  } else {
-                      img.classList.remove('active');
-                      img.style.opacity = '0';
-                      img.style.transform = 'scale(0)';
-                      img.style.pointerEvents = 'none';
+                      nextActiveImg = img;
                   }
               });
+              if (currentActiveImg && currentActiveImg !== nextActiveImg) {
+                  gsap.to(currentActiveImg, { opacity: 0, scale: 0.95, duration: 0.5, onComplete: () => {
+                      currentActiveImg.classList.remove('active');
+                      gsap.set(currentActiveImg, { clearProps: 'opacity,scale' });
+                  }});
+              }
+              if (nextActiveImg && !nextActiveImg.classList.contains('active')) {
+                  nextActiveImg.classList.add('active');
+                  gsap.fromTo(nextActiveImg, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.5 });
+              }
           });
       });
     
@@ -546,15 +563,9 @@ function waitForGSAP() {
       
       let currentIndex = 0;
       const totalSlides = testimonials.length;
-      const slideInterval = 5000; // 5 seconds
-      let progressWidth = 0;
-      let progressTimer;
-      let slideTimer;
-      let startTime;
       
       // Initialize first slide
       updateActiveSlide();
-      startProgress();
       
       function updateActiveSlide() {
           // Update testimonials
@@ -579,47 +590,35 @@ function waitForGSAP() {
               }
           });
           
-          // Reset and restart progress
-          resetProgress();
-          startProgress();
-      }
-      
-      function startProgress() {
-          // Clear any existing timers
-          resetProgress();
-          
-          // Set start time
-          startTime = Date.now();
-          
-          // Update progress bar using requestAnimationFrame for smoother animation
-          function updateProgress() {
-              const currentTime = Date.now();
-              const elapsed = currentTime - startTime;
-              progressWidth = (elapsed / slideInterval) * 100;
-              
-              if (progressWidth <= 100) {
-                  progressBar.style.width = progressWidth + '%';
-                  progressTimer = requestAnimationFrame(updateProgress);
-              } else {
-                  progressBar.style.width = '100%';
-                  nextSlide();
+          // Reset progress bar
+          if (progressBar) progressBar.style.width = '0%';
+
+          // Split text animation for active testimonial
+          const activeTestimonial = testimonials[currentIndex];
+          const textElements = activeTestimonial.querySelectorAll('h4, h5, h6, p, .testimonial-text');
+          textElements.forEach(el => {
+              // Remove any previous split (if using SplitText plugin)
+              if (el._splitText) {
+                  el._splitText.revert();
               }
-          }
-          
-          // Start the progress animation
-          progressTimer = requestAnimationFrame(updateProgress);
-          
-          // Set timer for next slide
-          slideTimer = setTimeout(nextSlide, slideInterval);
-      }
-      
-      function resetProgress() {
-          if (progressTimer) {
-              cancelAnimationFrame(progressTimer);
-          }
-          clearTimeout(slideTimer);
-          progressWidth = 0;
-          progressBar.style.width = '0%';
+              // Split and animate
+              const split = new SplitText(el, { type: "lines", linesClass: "line", forceClass: "split-text" });
+              el._splitText = split;
+              gsap.set(split.lines, {
+                  visibility: "visible",
+                  yPercent: 100,
+                  clipPath: "inset(0% 0% 100% 0%)",
+                  opacity: 1
+              });
+              gsap.to(split.lines, {
+                  yPercent: 0,
+                  clipPath: "inset(-20% -10% -20% 0%)",
+                  opacity: 1,
+                  stagger: 0.12,
+                  duration: 1.6,
+                  ease: "power3.out"
+              });
+          });
       }
       
       function nextSlide() {
@@ -656,7 +655,7 @@ function waitForGSAP() {
       
       document.addEventListener('touchstart', function(e) {
           touchStartX = e.changedTouches[0].screenX;
-          resetProgress(); // Pause progress when touching
+          // resetProgress(); // Pause progress when touching
       }, false);
       
       document.addEventListener('touchend', function(e) {
@@ -674,10 +673,7 @@ function waitForGSAP() {
               } else {
                   prevSlide();
               }
-          } else {
-              // If no swipe, restart progress
-              startProgress();
-          }
+          } // else do nothing
       }
   });
   
@@ -1168,6 +1164,98 @@ function waitForGSAP() {
   
     new CustomSmoothScroll();
   });
+  
+  
+  // Add navigation arrows to each .slider (desktop only)
+  if (window.innerWidth > 768) {
+    document.querySelectorAll('.slider').forEach((sliderElement, sliderIndex) => {
+      const sliderWrapper = sliderElement.querySelector('.slider-wrapper');
+      const sliderItems = sliderElement.querySelectorAll('.slider-item');
+      if (!sliderWrapper || sliderItems.length < 2) return;
+
+      // Create arrow container
+      const navWrapper = document.createElement('div');
+      navWrapper.className = 'slider-arrows';
+      navWrapper.style.display = 'flex';
+      navWrapper.style.justifyContent = 'center';
+      navWrapper.style.gap = '2vw';
+      navWrapper.style.marginTop = '2vw';
+
+      // Create left arrow
+      const leftArrow = document.createElement('button');
+      leftArrow.innerHTML = '&#8592;';
+      leftArrow.setAttribute('aria-label', 'Previous Slide');
+      leftArrow.style.fontSize = '2rem';
+      leftArrow.style.background = 'none';
+      leftArrow.style.border = 'none';
+      leftArrow.style.cursor = 'pointer';
+      leftArrow.style.color = 'var(--yellow, #FFC700)';
+      leftArrow.style.transition = 'color 0.2s';
+      leftArrow.onmouseover = () => leftArrow.style.color = 'var(--darkblue, #222B3A)';
+      leftArrow.onmouseout = () => leftArrow.style.color = 'var(--yellow, #FFC700)';
+
+      // Create right arrow
+      const rightArrow = document.createElement('button');
+      rightArrow.innerHTML = '&#8594;';
+      rightArrow.setAttribute('aria-label', 'Next Slide');
+      rightArrow.style.fontSize = '2rem';
+      rightArrow.style.background = 'none';
+      rightArrow.style.border = 'none';
+      rightArrow.style.cursor = 'pointer';
+      rightArrow.style.color = 'var(--yellow, #FFC700)';
+      rightArrow.style.transition = 'color 0.2s';
+      rightArrow.onmouseover = () => rightArrow.style.color = 'var(--darkblue, #222B3A)';
+      rightArrow.onmouseout = () => rightArrow.style.color = 'var(--yellow, #FFC700)';
+
+      navWrapper.appendChild(leftArrow);
+      navWrapper.appendChild(rightArrow);
+      sliderElement.appendChild(navWrapper);
+
+      // Find the DragScroll instance for this slider
+      let dragScrollInstance = null;
+      if (window.sliders && window.sliders[sliderIndex]) {
+        dragScrollInstance = window.sliders[sliderIndex];
+      } else if (typeof sliders !== 'undefined' && sliders[sliderIndex]) {
+        dragScrollInstance = sliders[sliderIndex];
+      }
+
+      // Helper to get current item index
+      function getCurrentIndex() {
+        // Find the closest item to the left edge
+        let minDiff = Infinity;
+        let closestIdx = 0;
+        sliderItems.forEach((item, idx) => {
+          const diff = Math.abs(item.offsetLeft - (dragScrollInstance ? dragScrollInstance.progress : sliderWrapper.scrollLeft));
+          if (diff < minDiff) {
+            minDiff = diff;
+            closestIdx = idx;
+          }
+        });
+        return closestIdx;
+      }
+
+      // Scroll to a specific item
+      function scrollToIndex(idx) {
+        if (!dragScrollInstance) return;
+        const item = sliderItems[idx];
+        if (!item) return;
+        const target = item.offsetLeft;
+        dragScrollInstance.progress = target;
+        dragScrollInstance.move();
+      }
+
+      leftArrow.addEventListener('click', () => {
+        const current = getCurrentIndex();
+        const prev = (current - 1 + sliderItems.length) % sliderItems.length;
+        scrollToIndex(prev);
+      });
+      rightArrow.addEventListener('click', () => {
+        const current = getCurrentIndex();
+        const next = (current + 1) % sliderItems.length;
+        scrollToIndex(next);
+      });
+    });
+  }
   
   
   
