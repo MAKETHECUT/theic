@@ -547,6 +547,7 @@ function waitForGSAP() {
   
   
   
+ 
   
   
   /* ==============================================
@@ -555,128 +556,128 @@ function waitForGSAP() {
   
   
   document.addEventListener('DOMContentLoaded', function() {
-      const testimonials = document.querySelectorAll('.testimonial');
-      const backgroundImages = document.querySelectorAll('.testimonial-image');
-      const prevBtn = document.querySelector('.arrow-back');
-      const nextBtn = document.querySelector('.arrow-next');
-      const progressBar = document.querySelector('.progress-bar');
-      
-      let currentIndex = 0;
-      const totalSlides = testimonials.length;
-      
-      // Initialize first slide
-      updateActiveSlide();
-      
-      function updateActiveSlide() {
-          // Update testimonials
-          testimonials.forEach((testimonial, index) => {
-              if (index === currentIndex) {
-                  testimonial.classList.add('active');
-                  testimonial.style.opacity = '1';
-                  testimonial.style.transform = 'translate(-0%, -0%) scale(1)';
-              } else {
-                  testimonial.classList.remove('active');
-                  testimonial.style.opacity = '0';
-                  testimonial.style.transform = 'translate(-0%, -0%) scale(0.95)';
-              }
-          });
-          
-          // Update background images
-          backgroundImages.forEach((image, index) => {
-              if (index === currentIndex) {
-                  image.classList.add('active');
-              } else {
-                  image.classList.remove('active');
-              }
-          });
-          
-          // Reset progress bar
-          if (progressBar) progressBar.style.width = '0%';
+    const testimonials = document.querySelectorAll('.testimonial');
+    const backgroundImages = document.querySelectorAll('.testimonial-image');
+    const prevBtn = document.querySelector('.arrow-back');
+    const nextBtn = document.querySelector('.arrow-next');
+    const progressBar = document.querySelector('.progress-bar');
+    
+    let currentIndex = 0;
+    const totalSlides = testimonials.length;
+    
+    // Initialize first slide
+    updateActiveSlide();
+    
+    function updateActiveSlide() {
+        // Update testimonials
+        testimonials.forEach((testimonial, index) => {
+            if (index === currentIndex) {
+                testimonial.classList.add('active');
+                testimonial.style.opacity = '1';
+                testimonial.style.transform = 'translate(-0%, -0%) scale(1)';
+            } else {
+                testimonial.classList.remove('active');
+                testimonial.style.opacity = '0';
+                testimonial.style.transform = 'translate(-0%, -0%) scale(0.95)';
+            }
+        });
+        
+        // Update background images
+        backgroundImages.forEach((image, index) => {
+            if (index === currentIndex) {
+                image.classList.add('active');
+            } else {
+                image.classList.remove('active');
+            }
+        });
+        
+        // Reset progress bar
+        if (progressBar) progressBar.style.width = '0%';
 
-          // Split text animation for active testimonial
-          const activeTestimonial = testimonials[currentIndex];
-          const textElements = activeTestimonial.querySelectorAll('h4, h5, h6, p, .testimonial-text');
-          textElements.forEach(el => {
-              // Remove any previous split (if using SplitText plugin)
-              if (el._splitText) {
-                  el._splitText.revert();
-              }
-              // Split and animate
-              const split = new SplitText(el, { type: "lines", linesClass: "line", forceClass: "split-text" });
-              el._splitText = split;
-              gsap.set(split.lines, {
-                  visibility: "visible",
-                  yPercent: 100,
-                  clipPath: "inset(0% 0% 100% 0%)",
-                  opacity: 1
-              });
-              gsap.to(split.lines, {
-                  yPercent: 0,
-                  clipPath: "inset(-20% -10% -20% 0%)",
-                  opacity: 1,
-                  stagger: 0.12,
-                  duration: 1.6,
-                  ease: "power3.out"
-              });
-          });
-      }
-      
-      function nextSlide() {
-          currentIndex = (currentIndex + 1) % totalSlides;
-          updateActiveSlide();
-      }
-      
-      function prevSlide() {
-          currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-          updateActiveSlide();
-      }
-      
-      // Add event listeners to buttons
-      nextBtn.addEventListener('click', () => {
-          nextSlide();
-      });
-      
-      prevBtn.addEventListener('click', () => {
-          prevSlide();
-      });
-      
-      // Add keyboard navigation
-      document.addEventListener('keydown', function(e) {
-          if (e.key === 'ArrowRight') {
-              prevSlide(); // RTL layout
-          } else if (e.key === 'ArrowLeft') {
-              nextSlide(); // RTL layout
-          }
-      });
-      
-      // Add touch swipe support
-      let touchStartX = 0;
-      let touchEndX = 0;
-      
-      document.addEventListener('touchstart', function(e) {
-          touchStartX = e.changedTouches[0].screenX;
-          // resetProgress(); // Pause progress when touching
-      }, false);
-      
-      document.addEventListener('touchend', function(e) {
-          touchEndX = e.changedTouches[0].screenX;
-          handleSwipe();
-      }, false);
-      
-      function handleSwipe() {
-          const swipeThreshold = 50;
-          const diff = touchStartX - touchEndX;
-          
-          if (Math.abs(diff) > swipeThreshold) {
-              if (diff > 0) {
-                  nextSlide();
-              } else {
-                  prevSlide();
-              }
-          } // else do nothing
-      }
-  });
-  
+        // Split text animation for active testimonial
+        const activeTestimonial = testimonials[currentIndex];
+        const textElements = activeTestimonial.querySelectorAll('h4, h5, h6, p, .testimonial-text');
+        textElements.forEach(el => {
+            // Remove any previous split (if using SplitText plugin)
+            if (el._splitText) {
+                el._splitText.revert();
+            }
+            // Split and animate
+            const split = new SplitText(el, { type: "lines", linesClass: "line", forceClass: "split-text" });
+            el._splitText = split;
+            gsap.set(split.lines, {
+                visibility: "visible",
+                yPercent: 100,
+                clipPath: "inset(0% 0% 100% 0%)",
+                opacity: 1
+            });
+            gsap.to(split.lines, {
+                yPercent: 0,
+                clipPath: "inset(-20% -10% -20% 0%)",
+                opacity: 1,
+                stagger: 0.12,
+                duration: 1.6,
+                ease: "power3.out"
+            });
+        });
+    }
+    
+    function nextSlide() {
+        currentIndex = (currentIndex + 1) % totalSlides;
+        updateActiveSlide();
+    }
+    
+    function prevSlide() {
+        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+        updateActiveSlide();
+    }
+    
+    // Add event listeners to buttons
+    nextBtn.addEventListener('click', () => {
+        nextSlide();
+    });
+    
+    prevBtn.addEventListener('click', () => {
+        prevSlide();
+    });
+    
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowRight') {
+            prevSlide(); // RTL layout
+        } else if (e.key === 'ArrowLeft') {
+            nextSlide(); // RTL layout
+        }
+    });
+    
+    // Add touch swipe support
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    document.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+        // resetProgress(); // Pause progress when touching
+    }, false);
+    
+    document.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, false);
+    
+    function handleSwipe() {
+        const swipeThreshold = 50;
+        const diff = touchStartX - touchEndX;
+        
+        if (Math.abs(diff) > swipeThreshold) {
+            if (diff > 0) {
+                nextSlide();
+            } else {
+                prevSlide();
+            }
+        } // else do nothing
+    }
+});
+
   
   /* ==============================================
     Split Text Animation
@@ -690,7 +691,10 @@ function waitForGSAP() {
       setTimeout(() => {
         const elements = [...newContent.querySelectorAll(
           "h1, h2, h3, h4, h5, h6, p, .btn, .nav"
-        )].filter(el => !el.matches(".running-text h6"));
+        )].filter(el => 
+          !el.matches(".running-text h6") &&
+          !el.closest('.no-global-split')
+        );
   
         let masterDelay = 1;
   
@@ -1030,143 +1034,28 @@ function waitForGSAP() {
   ============================================== */
   
   
-  
-  
-  document.addEventListener("DOMContentLoaded", function () {
-    // Global Settings
-    const isMobile = window.innerWidth < 768;
-    const SCROLL_SETTINGS = {
-      smoothness: isMobile ? 0.04 : 0.05,
-      touchMultiplier: isMobile ? 3.5 : 2.2,
-      dragMultiplier: isMobile ? 0.5 : 2,
-      easingSpeed: isMobile ? 100 : 120
-    };
-  
-    const lerp = (start, end, t) => start * (1 - t) + end * t;
-    const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
-  
-    class CustomSmoothScroll {
-      constructor() {
-        this.targetScroll = 0;
-        this.currentScroll = 0;
-        this.smoothness = SCROLL_SETTINGS.smoothness;
-        this.touchMultiplier = SCROLL_SETTINGS.touchMultiplier;
-        this.dragMultiplier = SCROLL_SETTINGS.dragMultiplier;
-        this.easingSpeed = SCROLL_SETTINGS.easingSpeed;
-        this.scrollEnabled = true;
-        this.lastFrameTime = performance.now();
-        this.init();
-      }
-  
-      init() {
-        this.applyStyles();
-        this.updateBodyHeight();
-        this.bindEvents();
-  
-        document.querySelectorAll("video").forEach(video => {
-          video.addEventListener("loadedmetadata", () => this.updateBodyHeight());
-        });
-  
-        setTimeout(() => {
-          this.scrollEnabled = true;
-          this.forceScrollUpdate();
-          this.smoothScrollLoop();
-        }, 10);
-      }
-  
-      applyStyles() {
-        document.documentElement.style.scrollBehavior = "auto";
-        setTimeout(() => {
-          document.body.style.overflow = "hidden";
-        }, 50);
-      }
-  
-      bindEvents() {
-        window.addEventListener("wheel", (e) => this.onScroll(e.deltaY), { passive: false });
-        window.addEventListener("resize", () => this.updateBodyHeight());
-  
-        let startY = 0;
-  
-        window.addEventListener("touchstart", (e) => {
-          startY = e.touches[0].clientY;
-        }, { passive: false });
-  
-        window.addEventListener("touchmove", (e) => {
-          const deltaY = (startY - e.touches[0].clientY) * this.touchMultiplier;
-          this.onScroll(deltaY);
-          startY = e.touches[0].clientY;
-        }, { passive: false });
-      }
-  
-      updateBodyHeight() {
-        const scrollableContent = document.querySelector(".wrapper");
-        if (scrollableContent) {
-          document.body.style.height = `${scrollableContent.clientHeight}px`;
-        }
-      }
-  
-    onScroll(delta) {
-      if (!this.scrollEnabled) return;
-  
-      const maxScroll = document.body.scrollHeight - window.innerHeight;
-  
-      // Prevent scroll if already at limits
-      const isAtTop = this.targetScroll <= 0 && delta < 0;
-      const isAtBottom = this.targetScroll >= maxScroll && delta > 0;
-  
-      if (isAtTop || isAtBottom) return;
-  
-      this.targetScroll = clamp(this.targetScroll + delta, 0, maxScroll);
-    }
-  
-  
-      forceScrollUpdate() {
-        this.targetScroll = window.scrollY;
-        this.currentScroll = this.targetScroll;
-        window.scrollTo(0, this.targetScroll);
-      }
-  
-      smoothScrollLoop() {
-        const now = performance.now();
-        const deltaTime = (now - this.lastFrameTime) / 1000;
-        this.lastFrameTime = now;
-  
-        if (this.scrollEnabled) {
-          const smoothingFactor = 1 - Math.pow(1 - this.smoothness, deltaTime * this.easingSpeed);
-          this.currentScroll = lerp(this.currentScroll, this.targetScroll, smoothingFactor);
-          window.scrollTo(0, this.currentScroll);
-        }
-  
-        requestAnimationFrame(() => this.smoothScrollLoop());
-      }
-  
-      restart(position = 0) {
-        this.targetScroll = position;
-        this.currentScroll = position;
-        window.scrollTo(0, position);
-      }
-  
-      destroy() {
-        this.scrollEnabled = false;
-        document.body.style.overflow = "";
-        document.body.style.height = "";
-        document.documentElement.style.scrollBehavior = "";
-        window.removeEventListener("wheel", this.onScroll);
-        window.removeEventListener("resize", this.updateBodyHeight);
-      }
-    }
-    
-    // Only initialize custom smooth scroll on desktop
-    if (window.innerWidth >= 768) {
-      window.addEventListener("touchmove", function(e) {
-        if (window.scrollY === 0 && e.touches[0].clientY > 0) {
-          e.preventDefault();
-        }
-      }, { passive: false });
+  function initSmoothScroll() {
+  const script = document.createElement("script");
+  script.src = "https://cdn.prod.website-files.com/659fe92f193868b7c3f4da3b/65d84ab5a204cd113a363a4f_lenis-smooth.txt";
+  script.onload = () => {
+    const lenis = new Lenis({
+      duration: 1,
+      easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+      direction: "vertical",
+      smooth: true,
+    });
 
-      new CustomSmoothScroll();
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
     }
-  });
+
+    requestAnimationFrame(raf);
+  };
+  document.head.appendChild(script);
+}
+
+initSmoothScroll();
   
   
   // Add navigation arrows to each .slider (desktop only)
