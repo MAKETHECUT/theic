@@ -1044,11 +1044,18 @@
     transition: opacity 0.5s ease, transform 0.5s ease;
     z-index: 2;
     pointer-events:none;
+    visibility: visible;
   }
   
   .testimonial.active {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: none;
+    visibility: visible;
+  }
+  
+  .testimonial:not(.active) {
+    opacity: 0;
+    visibility: hidden;
   }
   
   .quote-text {
@@ -1121,6 +1128,7 @@
     height: 100%;
     opacity: 0;
     transition: opacity 1s ease;
+    pointer-events: none;
   }
   
   .testimonial-image.active {
@@ -1146,40 +1154,36 @@
   }
   
   @media (max-width: 768px) {
-    
-    .testimonials-container {
-      width:90%;
-    }
-  
     .testimonial {
-      position: absolute;
-      bottom: 40vw;
-      left: 10vw;
-      width: 80vw;
+      z-index: 100 !important;
+      width:80%;
+      margin-bottom:10vw;
+      display: grid;
+      grid-gap: 5vw;
     }
-  
-    .arrows {
-      bottom: 10vw;
-      right: 10vw;
-      gap: 1.8vw;
+    .testimonial h4,
+    .testimonial p,
+    .testimonial .quote-text,
+    .testimonial .author {
+      z-index: 101 !important;
+      position: relative !important;
+      color: white !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      background: none !important;
     }
-    
+    .testimonial-image {
+      z-index: 1 !important;
+    }
+    .testimonials-container {
+      min-height: 200px;
+      width:100%;
+      height: auto;
+    }
     .arrow-back,
     .arrow-next {
-      width: 12vw;
-      height: 12vw;
+      width: 10vw;
     }
-      
-    .arrow-back img,
-    .arrow-next img {
-      width: 12vw;
-    }
-    
-    .progress-container {
-      margin-bottom:8vw;
-      margin-top:-8vw;
-    }
-    
   }
   
   .texture img {
