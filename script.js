@@ -1156,13 +1156,16 @@ function waitForGSAP() {
       }
     }
     
-    window.addEventListener("touchmove", function(e) {
-    if (window.scrollY === 0 && e.touches[0].clientY > 0) {
-      e.preventDefault();
+    // Only initialize custom smooth scroll on desktop
+    if (window.innerWidth >= 768) {
+      window.addEventListener("touchmove", function(e) {
+        if (window.scrollY === 0 && e.touches[0].clientY > 0) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      new CustomSmoothScroll();
     }
-  }, { passive: false });
-  
-    new CustomSmoothScroll();
   });
   
   
