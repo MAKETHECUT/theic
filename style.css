@@ -78,11 +78,13 @@
   }
   
   
-  html, body {
-    overscroll-behavior: none;
-    touch-action: none;
+  /* Only apply touch-action: none on desktop for custom smooth scroll */
+  @media (min-width: 768px) {
+    html, body {
+      overscroll-behavior: none;
+      touch-action: none;
+    }
   }
-  
   
   
   input, textarea, select, button {
