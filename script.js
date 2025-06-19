@@ -243,9 +243,9 @@ function waitForGSAP() {
       };
   
       ScrollTrigger.create({
-        trigger: ".all-tabs-section",
-        start: "top 0%",
-        end: "bottom 0%",
+        trigger: ".tab-overlay-section",
+        start: "top -20%",
+        end: "bottom 65%",
         //markers:true,
         onEnter: () => {
           gsap.to(image, {
