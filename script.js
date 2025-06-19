@@ -1151,4 +1151,33 @@ initSmoothScroll();
   
   
   
+  function initVWFontZoomSafeForGSAP() {
+    const elements = [];
+    const baseZoom = window.devicePixelRatio;
+    const baseWidth = window.innerWidth;
   
+    // Collect elements and store their original vw font size
+    document.querySelectorAll('body *:not(img):not(video):not(canvas):not(iframe)').forEach(el => {
+      const computed = getComputedStyle(el);
+      const fontSizePx = parseFloat(computed.fontSize);
+      const vw = (fontSizePx / baseWidth) * 100;
+  
+      if (vw > 0 && vw < 20) {
+        elements.push({ el, baseVW: vw });
+      }
+    });
+  
+    function applyZoom() {
+      const currentZoom = window.devicePixelRatio;
+      const scale = currentZoom / baseZoom;
+  
+      elements.forEach(({ el, baseVW }) => {
+        el.style.setProperty('font-size', `${baseVW * scale}vw`, 'important');
+      });
+    }
+  
+    window.addEventListener('resize', applyZoom);
+    applyZoom();
+  }
+  
+  window.addEventListener('DOMContentLoaded', initVWFontZoomSafeForGSAP);
