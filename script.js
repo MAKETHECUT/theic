@@ -1152,6 +1152,8 @@ initSmoothScroll();
   
   
   function initVWFontZoomSafeForGSAP() {
+
+    /*
     const elements = [];
     const baseZoom = window.devicePixelRatio;
     const baseWidth = window.innerWidth;
@@ -1178,6 +1180,8 @@ initSmoothScroll();
   
     window.addEventListener('resize', applyZoom);
     applyZoom();
+
+    */
   }
   
   window.addEventListener('DOMContentLoaded', initVWFontZoomSafeForGSAP);
