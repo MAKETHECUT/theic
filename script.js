@@ -40,37 +40,11 @@ function waitForGSAP() {
     });
   }
   
-  // Wait for specific elements to be ready
+  // Wait for specific elements to be ready (simplified)
   async function waitForElements() {
-    const requiredElements = [
-      '.hero',
-      '.testimonial',
-      '.tab-overlay-section',
-      '.cinema-section',
-      '.slider'
-    ];
-    
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds total
-    
-    while (attempts < maxAttempts) {
-      const missingElements = requiredElements.filter(selector => 
-        !document.querySelector(selector) || 
-        document.querySelector(selector).offsetHeight === 0
-      );
-      
-      if (missingElements.length === 0) {
-        console.log('All required elements are ready');
-        return true;
-      }
-      
-      console.log(`Waiting for elements: ${missingElements.join(', ')}`);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
-    
-    console.warn('Some elements may not be ready:', requiredElements);
-    return false;
+    // Just wait a short time instead of blocking
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
   }
 
   // Initialize the page
@@ -106,23 +80,31 @@ function waitForGSAP() {
         });
       }
   
-      // Wait for fonts to load
-      await document.fonts.ready;
+      // Wait for fonts to load (with timeout)
+      try {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+      } catch (error) {
+        console.warn('Font loading timeout');
+      }
       
-      // Wait for complete page load (including all images, scripts, etc.)
-      await waitForCompleteLoad();
+      // Wait for complete page load (with timeout)
+      try {
+        await Promise.race([
+          waitForCompleteLoad(),
+          new Promise(resolve => setTimeout(resolve, 3000))
+        ]);
+      } catch (error) {
+        console.warn('Page load timeout');
+      }
       
       // Wait for specific elements to be ready
       await waitForElements();
       
-      // Additional wait to ensure everything is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Force multiple layout recalculations
-      for (let i = 0; i < 3; i++) {
-        document.body.offsetHeight;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      // Short wait to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Refresh ScrollTrigger to recalculate positions
       ScrollTrigger.refresh();
@@ -175,12 +157,6 @@ function waitForGSAP() {
       // Final ScrollTrigger refresh after everything is initialized
       setTimeout(() => {
         ScrollTrigger.refresh();
-        
-        // Final check to ensure everything is working
-        setTimeout(() => {
-          console.log('Final ScrollTrigger refresh');
-          ScrollTrigger.refresh();
-        }, 1000);
       }, 500);
 
       
@@ -219,28 +195,10 @@ function waitForGSAP() {
     try {
       console.log('Starting master initialization...');
       
-      // Wait for everything to be ready
+      // Wait for GSAP and basic requirements
       await waitForGSAP();
-      await waitForCompleteLoad();
-      await document.fonts.ready;
       
-      // Wait for window load event
-      if (document.readyState !== 'complete') {
-        await new Promise(resolve => {
-          window.addEventListener('load', resolve, { once: true });
-        });
-      }
-      
-      // Force multiple layout recalculations with longer delays
-      for (let i = 0; i < 5; i++) {
-        document.body.offsetHeight;
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      
-      // Additional wait to ensure everything is truly ready
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Start the main initialization
+      // Start the main initialization immediately
       await initializePage();
       
       console.log('Master initialization complete');
@@ -1024,23 +982,31 @@ function waitForGSAP() {
       const newContent = document.querySelector("body");
       if (!newContent) return;
     
-      // Wait for DOM content to be loaded
-      await waitForCompleteLoad();
+      // Wait for DOM content to be loaded (with timeout)
+      try {
+        await Promise.race([
+          waitForCompleteLoad(),
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+      } catch (error) {
+        console.warn('SplitText: Page load timeout');
+      }
       
-      // Wait for fonts to load
-      await document.fonts.ready;
+      // Wait for fonts to load (with timeout)
+      try {
+        await Promise.race([
+          document.fonts.ready,
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+      } catch (error) {
+        console.warn('SplitText: Font loading timeout');
+      }
       
       // Wait for specific elements to be ready
       await waitForElements();
       
-      // Additional wait to ensure everything is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force multiple layout recalculations
-      for (let i = 0; i < 3; i++) {
-        document.body.offsetHeight;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      // Short wait to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 300));
     
       const elements = [...newContent.querySelectorAll(
         "h1, h2, h3, h4, h5, h6, p, .btn, .nav"
@@ -1622,5 +1588,5 @@ initSmoothScroll();
   window.addEventListener('load', () => {
     setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 1000);
+    }, 500);
   });
