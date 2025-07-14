@@ -11,15 +11,31 @@ window.addEventListener("beforeunload", () => {
 // Wait for GSAP and plugins to be fully loaded
 function waitForGSAP() {
     return new Promise((resolve) => {
-      if (window.gsap && window.ScrollTrigger) {
+      if (window.gsap && window.ScrollTrigger && window.SplitText) {
         resolve();
       } else {
         const checkGSAP = setInterval(() => {
-          if (window.gsap && window.ScrollTrigger) {
+          if (window.gsap && window.ScrollTrigger && window.SplitText) {
             clearInterval(checkGSAP);
             resolve();
           }
         }, 100);
+      }
+    });
+  }
+  
+  // Wait for complete page load excluding videos
+  function waitForCompleteLoad() {
+    return new Promise((resolve) => {
+      if (document.readyState === 'complete') {
+        resolve();
+      } else {
+        // Use DOMContentLoaded instead of load to avoid waiting for videos
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', resolve, { once: true });
+        } else {
+          resolve();
+        }
       }
     });
   }
@@ -59,6 +75,12 @@ function waitForGSAP() {
   
       // Wait for fonts to load
       await document.fonts.ready;
+      
+      // Wait for complete page load (including all images, scripts, etc.)
+      await waitForCompleteLoad();
+      
+      // Additional wait to ensure everything is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
   
       // Initialize animations
       gsap.set("body", { opacity: 0, visibility: "hidden" });
@@ -91,12 +113,42 @@ function waitForGSAP() {
       initializeSmoothScroll();
       initializeGridOverlay();
       initializeResponsiveBehavior();
+      
+      // Initialize SplitText animations after everything else
+      initializeSplitTextAnimations();
+      
+      // Initialize testimonials slider
+      initializeTestimonialsSlider();
 
       
   
     } catch (error) {
       console.error('Error during page initialization:', error);
     }
+  }
+  
+  // Function declarations for initialization
+  function initializeAnimations() {
+    // This function will be called after page load
+    // All GSAP animations are already defined globally
+  }
+  
+  function initializeSliders() {
+    // Initialize slider functionality
+    // This is handled by the DragScroll class
+  }
+  
+  function initializeSmoothScroll() {
+    // Initialize smooth scrolling
+    initSmoothScroll();
+  }
+  
+  function initializeGridOverlay() {
+    // Grid overlay functionality is already defined globally
+  }
+  
+  function initializeResponsiveBehavior() {
+    // Responsive behavior is already defined globally
   }
   
   // Start initialization when the script loads
@@ -213,9 +265,9 @@ function waitForGSAP() {
       ease: "none",
       scrollTrigger: {
         trigger: mask.parentElement,
-        start: "top center",
+        start: "top bottom",
         end: "bottom center",
-        scrub: 1.2,
+        scrub: 0.5,
         markers: false
       }
     });
@@ -227,8 +279,8 @@ function waitForGSAP() {
     Healing tabs
   ============================================== */
   
-  if (window.innerWidth > 768) {
-    
+  function initializeHealingTabs() {
+    if (window.innerWidth > 768) {
       const image = document.querySelector(".image-content");
   
       // Initial fixed position and hidden state
@@ -242,10 +294,10 @@ function waitForGSAP() {
         ease: "power4.out"
       };
   
-      ScrollTrigger.create({
-        trigger: ".tab-overlay-section",
-        start: "top -20%",
-        end: "bottom 65%",
+      let scrollTriggerInstance = ScrollTrigger.create({
+        trigger: ".tab-overlay-section", 
+        start: "center -50%",
+        end: "bottom -60%",
         //markers:true,
         onEnter: () => {
           gsap.to(image, {
@@ -295,7 +347,7 @@ function waitForGSAP() {
       const rotationStrength = 8;
       const ease = 0.04;
   
-      window.addEventListener("mousemove", (e) => {
+      let mouseMoveHandler = (e) => {
         const x = (e.clientX / window.innerWidth) - 0.5;
         const y = (e.clientY / window.innerHeight) - 0.5;
   
@@ -303,7 +355,9 @@ function waitForGSAP() {
         targetY = y * movementStrength;
         targetRotY = x * rotationStrength;
         targetRotX = -y * rotationStrength;
-      });
+      };
+  
+      window.addEventListener("mousemove", mouseMoveHandler);
   
       function animateMovement() {
         currentX += (targetX - currentX) * ease;
@@ -320,11 +374,36 @@ function waitForGSAP() {
           transformOrigin: "center"
         });
   
-        requestAnimationFrame(animateMovement);
+        animationFrameId = requestAnimationFrame(animateMovement);
       }
   
-      animateMovement();
+      let animationFrameId = requestAnimationFrame(animateMovement);
+  
+      // Cleanup function
+      const cleanup = () => {
+        if (scrollTriggerInstance) {
+          scrollTriggerInstance.kill();
+        }
+        window.removeEventListener("mousemove", mouseMoveHandler);
+        cancelAnimationFrame(animationFrameId);
+      };
+  
+      // Handle resize with throttling
+      let resizeTimeout;
+      const handleResize = () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          cleanup();
+          initializeHealingTabs();
+        }, 300);
+      };
+  
+      window.addEventListener("resize", handleResize);
+    }
   }
+  
+  // Initial call
+  initializeHealingTabs();
   
   
   /* ==============================================
@@ -367,21 +446,30 @@ function waitForGSAP() {
       const cinematic = section.querySelector(".cinematic");
       const text = cinematic.querySelector(".running-text");
   
-      text.style.willChange = "transform";
+      // Calculate the exact distance the text needs to move
+      const textHeight = text.scrollHeight;
+      const containerHeight = cinematic.clientHeight;
+      const scrollDistance = textHeight - containerHeight;
   
-      gsap.to(text, {
-        y: () => -(text.scrollHeight - cinematic.clientHeight),
-        ease: "none",
-        force3D: true,
-        scrollTrigger: {
-          trigger: section,
-          start: () => window.innerWidth < 768 ? "bottom 50%" : "bottom bottom",
-          end: () => "+=" + (text.scrollHeight - cinematic.clientHeight),
-          scrub: 0.7,
-          pin: true,
-          pinType: "transform",
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
+      // Create ScrollTrigger for the running text animation with pin
+      ScrollTrigger.create({
+        trigger: section,
+        start: "bottom bottom",
+        end: "+=200%",
+        scrub: false,
+        pin: section,
+        pinSpacing: true,
+        onUpdate: (self) => {
+          const progress = self.progress;
+          gsap.set(text, {
+            y: -scrollDistance * progress
+          });
+          
+          // Only allow scrolling to continue after text animation is complete
+          if (progress >= 1) {
+            self.pin = null;
+            self.end = "bottom top";
+          }
         }
       });
     }, 100);
@@ -450,6 +538,10 @@ function waitForGSAP() {
       const accordionTabs = document.querySelectorAll('.tab-accordion .tab');
       const accordionImages = document.querySelectorAll('.tab-accordion .tab-image');
       
+      // Ensure first tab is always active and first image is shown
+      const firstTab = accordionTabs[0];
+      const firstTabNumber = firstTab ? firstTab.getAttribute('data-tab') : null;
+      
       // Set initial state for all tabs
       accordionTabs.forEach((tab, index) => {
           const content = tab.querySelector('.tab-content');
@@ -458,19 +550,28 @@ function waitForGSAP() {
           // Hide all tabs except the first one
           if (index === 0) {
               tab.classList.add('active');
+              content.style.height = 'auto';
+              content.style.paddingTop = '2vw';
+              content.style.transform = 'scaleY(1)';
           } else {
               content.style.height = '0';
               content.style.overflow = 'hidden';
               content.style.transform = 'scaleY(0)';
           }
           
-          // Set initial state for images
+          // Set initial state for images - ensure first image is always active
           const tabNumber = tab.getAttribute('data-tab');
           accordionImages.forEach(img => {
-              if (img.getAttribute('data-tab') === tabNumber && index === 0) {
-                  img.classList.add('active');
-              } else {
-                  img.classList.remove('active');
+              if (img.getAttribute('data-tab') === tabNumber) {
+                  if (index === 0 || tabNumber === firstTabNumber) {
+                      img.classList.add('active');
+                      img.style.opacity = '1';
+                      img.style.transform = 'scale(1)';
+                  } else {
+                      img.classList.remove('active');
+                      img.style.opacity = '0';
+                      img.style.transform = 'scale(0.95)';
+                  }
               }
           });
           
@@ -494,27 +595,43 @@ function waitForGSAP() {
               content.style.paddingTop = '2vw';
               content.style.transform = 'scaleY(1)';
               
-              // Animate tab images with GSAP
-              const tabNumber = tab.getAttribute('data-tab');
-              let currentActiveImg = null;
-              let nextActiveImg = null;
-              accordionImages.forEach(img => {
-                  if (img.classList.contains('active')) {
-                      currentActiveImg = img;
+              // Animate tab images with GSAP (desktop only)
+              if (window.innerWidth >= 768) {
+                  const tabNumber = tab.getAttribute('data-tab');
+                  let currentActiveImg = null;
+                  let nextActiveImg = null;
+                  accordionImages.forEach(img => {
+                      if (img.classList.contains('active')) {
+                          currentActiveImg = img;
+                      }
+                      if (img.getAttribute('data-tab') === tabNumber) {
+                          nextActiveImg = img;
+                      }
+                  });
+                  if (currentActiveImg && currentActiveImg !== nextActiveImg) {
+                      gsap.to(currentActiveImg, { opacity: 0, scale: 0.95, duration: 0.5, onComplete: () => {
+                          currentActiveImg.classList.remove('active');
+                          gsap.set(currentActiveImg, { clearProps: 'opacity,scale' });
+                      }});
                   }
-                  if (img.getAttribute('data-tab') === tabNumber) {
-                      nextActiveImg = img;
+                  if (nextActiveImg && !nextActiveImg.classList.contains('active')) {
+                      nextActiveImg.classList.add('active');
+                      gsap.fromTo(nextActiveImg, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.5 });
                   }
-              });
-              if (currentActiveImg && currentActiveImg !== nextActiveImg) {
-                  gsap.to(currentActiveImg, { opacity: 0, scale: 0.95, duration: 0.5, onComplete: () => {
-                      currentActiveImg.classList.remove('active');
-                      gsap.set(currentActiveImg, { clearProps: 'opacity,scale' });
-                  }});
-              }
-              if (nextActiveImg && !nextActiveImg.classList.contains('active')) {
-                  nextActiveImg.classList.add('active');
-                  gsap.fromTo(nextActiveImg, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.5 });
+              } else {
+                  // Mobile: Simple show/hide without animations
+                  const tabNumber = tab.getAttribute('data-tab');
+                  accordionImages.forEach(img => {
+                      if (img.getAttribute('data-tab') === tabNumber) {
+                          img.classList.add('active');
+                          img.style.opacity = '1';
+                          img.style.transform = 'scale(1)';
+                      } else {
+                          img.classList.remove('active');
+                          img.style.opacity = '0';
+                          img.style.transform = 'scale(0.95)';
+                      }
+                  });
               }
           });
       });
@@ -525,14 +642,34 @@ function waitForGSAP() {
       const images = Array.from(imageContainer.querySelectorAll('.tab-image'));
       const tabs = document.querySelectorAll('.tab-accordion .tab');
   
+      // Ensure first tab is properly set up on mobile
+      const firstTab = tabs[0];
+      if (firstTab) {
+          const firstTabContent = firstTab.querySelector('.tab-content');
+          firstTabContent.style.height = 'auto';
+          firstTabContent.style.paddingTop = '2vw';
+          firstTabContent.style.transform = 'scaleY(1)';
+          firstTab.classList.add('active');
+      }
+  
       tabs.forEach(tab => {
         const tabNumber = tab.getAttribute('data-tab');
         const matchingImage = images.find(img => img.getAttribute('data-tab') === tabNumber);
   
         if (matchingImage && !tab.contains(matchingImage)) {
-  
           const h4 = tab.querySelector('h4');
           tab.insertBefore(matchingImage, h4);
+          
+          // Ensure first image is visible on mobile
+          if (tab === firstTab) {
+              matchingImage.classList.add('active');
+              matchingImage.style.opacity = '1';
+              matchingImage.style.transform = 'scale(1)';
+          } else {
+              matchingImage.classList.remove('active');
+              matchingImage.style.opacity = '0';
+              matchingImage.style.transform = 'scale(0.95)';
+          }
         }
       });
   
@@ -555,7 +692,11 @@ function waitForGSAP() {
   ============================================== */
   
   
-  document.addEventListener('DOMContentLoaded', function() {
+  // Initialize testimonials slider after DOM content is loaded
+  async function initializeTestimonialsSlider() {
+    await waitForCompleteLoad();
+    await document.fonts.ready;
+    
     const testimonials = document.querySelectorAll('.testimonial');
     const backgroundImages = document.querySelectorAll('.testimonial-image');
     const prevBtn = document.querySelector('.arrow-back');
@@ -676,76 +817,82 @@ function waitForGSAP() {
             }
         } // else do nothing
     }
-});
+  }
 
   
   /* ==============================================
     Split Text Animation
    ============================================== */
   
-  const ctx = gsap.context(() => {
+  // Initialize SplitText animations after DOM content is loaded
+  async function initializeSplitTextAnimations() {
     const newContent = document.querySelector("body");
     if (!newContent) return;
   
-    document.fonts.ready.then(() => {
-      setTimeout(() => {
-        const elements = [...newContent.querySelectorAll(
-          "h1, h2, h3, h4, h5, h6, p, .btn, .nav"
-        )].filter(el => 
-          !el.matches(".running-text h6") &&
-          !el.closest('.no-global-split')
-        );
+    // Wait for DOM content to be loaded
+    await waitForCompleteLoad();
+    
+    // Wait for fonts to load
+    await document.fonts.ready;
+    
+    // Additional wait to ensure everything is fully rendered
+    await new Promise(resolve => setTimeout(resolve, 200));
   
-        let masterDelay = 1;
-  
-        elements.forEach((el) => {
-          if (el.closest(".image-container")) return;
-  
-          el.style.display = "block";
-          el.offsetHeight;
-  
-          const split = new SplitText(el, { 
-            type: "lines", 
-            linesClass: "line",
-            forceClass: "split-text"
-          });
-  
-          split.lines.forEach((line) => {
-            line.style.display = "inline-block";
-            line.style.width = "100%";
-            line.style.lineHeight = "unset";
-            line.style.visibility = "hidden";
-          });
-  
-          gsap.set(split.lines, {
-            visibility: "visible",
-            yPercent: 100,
-            clipPath: "inset(0% 0% 100% 0%)",
-            opacity: 1
-          });
-  
-          gsap.to(split.lines, {
-            yPercent: 0,
-            clipPath: "inset(-20% -10% -20% 0%)",
-            opacity: 1,
-            stagger: 0.12,
-            duration: 1.6,
-            delay: el.closest(".hero") ? masterDelay : 0,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: el,
-              start: window.innerWidth < 768 ? "top 80%" : "top 100%",
-              end: "bottom 100%",
-              toggleActions: "play none none none",
-              once: true
-            }
-          });
-  
-          if (el.closest(".hero")) masterDelay += 0.25;
-        });
-      }, 100);
+    const elements = [...newContent.querySelectorAll(
+      "h1, h2, h3, h4, h5, h6, p, .btn, .nav"
+    )].filter(el => 
+      !el.matches(".running-text h6") &&
+      !el.closest('.no-global-split')
+    );
+
+    let masterDelay = 0.5;
+
+    elements.forEach((el) => {
+      if (el.closest(".image-container")) return;
+
+      el.style.display = "block";
+      el.offsetHeight;
+
+      const split = new SplitText(el, { 
+        type: "lines", 
+        linesClass: "line",
+        forceClass: "split-text"
+      });
+
+      split.lines.forEach((line) => {
+        line.style.display = "inline-block";
+        line.style.width = "100%";
+        line.style.lineHeight = "unset";
+        line.style.visibility = "hidden";
+      });
+
+      gsap.set(split.lines, {
+        visibility: "visible",
+        yPercent: 100,
+        clipPath: "inset(0% 0% 100% 0%)",
+        opacity: 1
+      });
+
+      gsap.to(split.lines, {
+        yPercent: 0,
+        clipPath: "inset(-20% -10% -20% 0%)",
+        opacity: 1,
+        stagger: 0.12,
+        duration: 1.6,
+        delay: el.closest(".hero") ? masterDelay : 0,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: el,
+          start: window.innerWidth < 768 ? "top 80%" : "top 100%",
+          end: "bottom 100%",
+          toggleActions: "play none none none",
+          once: true
+        }
+      });
+
+      if (el.closest(".hero")) masterDelay += 0.25;
     });
-  }, document.body);
+  }
   
   
   
@@ -755,16 +902,20 @@ function waitForGSAP() {
     Responsive Behavior on Screen Resize
   ============================================== */
     
-  
+    // Throttled resize handler to prevent excessive calls
+    let resizeTimeout;
+    let lastWidth = window.innerWidth;
     
-      let lastWidth = window.innerWidth;
-      window.addEventListener("resize", () => {
-          const currentWidth = window.innerWidth;
-          if ((lastWidth > 768 && currentWidth <= 768) || (lastWidth <= 768 && currentWidth > 768)) {
-              window.location.reload();
-          }
-          lastWidth = currentWidth;
-      });
+    window.addEventListener("resize", () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const currentWidth = window.innerWidth;
+            if ((lastWidth > 768 && currentWidth <= 768) || (lastWidth <= 768 && currentWidth > 768)) {
+                window.location.reload();
+            }
+            lastWidth = currentWidth;
+        }, 250); // Throttle to 250ms
+    });
       
   
       
@@ -844,17 +995,31 @@ function waitForGSAP() {
     }
   
     bindEvents() {
-      window.addEventListener("resize", () => this.calculate());
-      this.el.addEventListener("mousedown", (e) => this.handleStart(e));
-      this.el.addEventListener("touchstart", (e) => this.handleStart(e));
-      window.addEventListener("mousemove", (e) => this.handleMove(e));
-      window.addEventListener("mouseup", (e) => this.handleEnd(e));
-      this.wrap.addEventListener("touchstart", (e) => this.handleStart(e));
-      window.addEventListener("touchmove", (e) => this.handleMove(e), { passive: false });
-      window.addEventListener("touchend", (e) => this.handleEnd(e));
-      this.wrap.addEventListener("dragstart", (e) => this.preventDragOnLinks(e));
-      window.addEventListener("wheel", (e) => this.handleWheel(e), { passive: true });
-      window.addEventListener("scroll", () => this.handleScroll(), { passive: true });
+      // Store references to event handlers for cleanup
+      this.handleResize = () => {
+        clearTimeout(this.resizeTimeout);
+        this.resizeTimeout = setTimeout(() => this.calculate(), 100);
+      };
+      this.handleStartBound = (e) => this.handleStart(e);
+      this.handleMoveBound = (e) => this.handleMove(e);
+      this.handleEndBound = (e) => this.handleEnd(e);
+      this.handleWheelBound = (e) => this.handleWheel(e);
+      this.handleScrollBound = () => this.handleScroll();
+      this.preventDragOnLinksBound = (e) => this.preventDragOnLinks(e);
+      
+      // Throttled resize handler
+      this.resizeTimeout = null;
+      window.addEventListener("resize", this.handleResize);
+      this.el.addEventListener("mousedown", this.handleStartBound);
+      this.el.addEventListener("touchstart", this.handleStartBound);
+      window.addEventListener("mousemove", this.handleMoveBound);
+      window.addEventListener("mouseup", this.handleEndBound);
+      this.wrap.addEventListener("touchstart", this.handleStartBound);
+      window.addEventListener("touchmove", this.handleMoveBound, { passive: false });
+      window.addEventListener("touchend", this.handleEndBound);
+      this.wrap.addEventListener("dragstart", this.preventDragOnLinksBound);
+      window.addEventListener("wheel", this.handleWheelBound, { passive: true });
+      window.addEventListener("scroll", this.handleScrollBound, { passive: true });
     }
   
     calculate() {
@@ -988,9 +1153,27 @@ function waitForGSAP() {
     }
   
     raf() {
-      this.x += (this.progress - this.x) * 0.1;
-      this.wrap.style.transform = `translateX(${-this.x}px)`;
+      // Only update if there's a significant difference to reduce CPU usage
+      const diff = Math.abs(this.progress - this.x);
+      if (diff > 0.1) {
+        this.x += (this.progress - this.x) * 0.1;
+        this.wrap.style.transform = `translateX(${-this.x}px)`;
+      }
       requestAnimationFrame(this.raf.bind(this));
+    }
+    
+    // Cleanup method to remove event listeners
+    destroy() {
+      window.removeEventListener("resize", this.handleResize);
+      window.removeEventListener("mousemove", this.handleMoveBound);
+      window.removeEventListener("mouseup", this.handleEndBound);
+      window.removeEventListener("touchmove", this.handleMoveBound);
+      window.removeEventListener("touchend", this.handleEndBound);
+      window.removeEventListener("wheel", this.handleWheelBound);
+      window.removeEventListener("scroll", this.handleScrollBound);
+      this.el.removeEventListener("mousedown", this.handleStartBound);
+      this.el.removeEventListener("touchstart", this.handleStartBound);
+      this.wrap.removeEventListener("dragstart", this.preventDragOnLinksBound);
     }
   }
   
