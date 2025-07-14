@@ -1,10 +1,10 @@
-window.history.scrollRestoration = "manual";
+// --- Ensure GSAP and ScrollTrigger are loaded and registered ---
+if (window.gsap && window.ScrollTrigger) {
+  gsap.registerPlugin(ScrollTrigger);
+} else {
+  console.error('GSAP or ScrollTrigger not loaded!');
+}
 
-window.addEventListener("beforeunload", () => {
-  window.scrollTo(0, 0);
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
-});
 
 
 
@@ -24,21 +24,6 @@ function waitForGSAP() {
     });
   }
   
-  // Wait for complete page load excluding videos
-  function waitForCompleteLoad() {
-    return new Promise((resolve) => {
-      if (document.readyState === 'complete') {
-        resolve();
-      } else {
-        // Use DOMContentLoaded instead of load to avoid waiting for videos
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', resolve, { once: true });
-        } else {
-          resolve();
-        }
-      }
-    });
-  }
   
 
   // Initialize the page
@@ -221,6 +206,58 @@ function waitForGSAP() {
     initializeTestimonialsSlider();
   }
   
+
+
+
+    /* ==============================================
+    Fixed Cinematic Section
+  ============================================== */
+  const section = document.querySelector(".cinema-section");
+  const cinematic = section.querySelector(".cinematic");
+  const text = cinematic.querySelector(".running-text");
+
+  text.style.willChange = "transform";
+
+  // Create ScrollTrigger for pinning
+  const pinTrigger = ScrollTrigger.create({
+    trigger: section,
+    start: () => window.innerWidth < 768 ? "bottom bottom" : "bottom bottom", 
+    end: "+=100%", // Add end point
+    pin: true,
+    pinSpacing: true, // Enable pin spacing to prevent overlap
+    pinType: "transform",
+    anticipatePin: 1,
+    onEnter: () => {
+      ScrollTrigger.refresh();
+    },
+    onLeaveBack: () => {
+      ScrollTrigger.refresh();
+    }
+  });
+
+  // Animation that runs while pinned
+  gsap.to(text, {
+    y: () => {
+      const containerHeight = cinematic.offsetHeight;
+      const textHeight = text.scrollHeight;
+      const scrollDistance = (textHeight - containerHeight);
+      return -scrollDistance;
+    },
+    ease: "none",
+    force3D: true,
+    scrollTrigger: {
+      trigger: section,
+      start: () => window.innerWidth < 768 ? "bottom bottom" : "bottom bottom",
+      end: "+=100%",
+      scrub: 0.6,
+      invalidateOnRefresh: true,
+      onLeaveBack: () => {
+        ScrollTrigger.refresh();
+      }
+    }
+  });
+
+
   /* ==============================================
     Gsap Animations
   ============================================== */
@@ -345,175 +382,121 @@ function waitForGSAP() {
   /* ==============================================
     Healing tabs
   ============================================== */
+
   
-  function initializeHealingTabs() {
-    if (window.innerWidth > 768) {
-      const image = document.querySelector(".image-content");
-      
-      if (!image) return;
-  
-      // Initial fixed position and hidden state
-      image.style.position = "fixed";
-      image.style.opacity = 0;
-      image.style.transform = "scale(0.5)";
-      image.style.pointerEvents = "none";
-  
-      const animationSettings = {
-        duration: 0.7,
-        ease: "power4.out"
-      };
-  
-      // Wait for the trigger element to be available and properly sized
-      const triggerElement = document.querySelector(".tab-overlay-section");
-      if (!triggerElement) return;
-      
-      // Ensure the trigger element has proper dimensions
-      const rect = triggerElement.getBoundingClientRect();
-      if (rect.height === 0) {
-        // If element has no height, wait a bit and retry
-        setTimeout(() => initializeHealingTabs(), 100);
-        return;
+  if (window.innerWidth > 768) {
+    
+    const image = document.querySelector(".image-content");
+
+    // Initial fixed position and hidden state
+    image.style.position = "fixed";
+    image.style.opacity = 0;
+    image.style.transform = "scale(0.5)";
+    image.style.pointerEvents = "none";
+
+    const animationSettings = {
+      duration: 0.7,
+      ease: "power4.out"
+    };
+
+    ScrollTrigger.create({
+      trigger: ".tab-accordion",
+      start: "top 50%",
+      end: "bottom 50%",
+      //markers:true,
+      onEnter: () => {
+        gsap.to(image, {
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          ...animationSettings
+        });
+      },
+      onLeave: () => {
+        gsap.to(image, {
+          opacity: 0,
+          scale: 0.3,
+          rotate: 8,
+          ...animationSettings
+        });
+      },
+      onEnterBack: () => {
+        gsap.to(image, {
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          ...animationSettings
+        });
+      },
+      onLeaveBack: () => {
+        gsap.to(image, {
+          opacity: 0,
+          scale: 0.3,
+          rotate: 8,
+          ...animationSettings
+        });
       }
-  
-      let scrollTriggerInstance = ScrollTrigger.create({
-        trigger: ".tab-overlay-section", 
-        start: "bottom 50%",
-        end: "bottom -60%",
-        //markers:true,
-        onEnter: () => {
-          gsap.to(image, {
-            opacity: 1,
-            scale: 1,
-            rotate: 0,
-            ...animationSettings
-          });
-        },
-        onLeave: () => {
-          gsap.to(image, {
-            opacity: 0,
-            scale: 0.3,
-            rotate: 8,
-            ...animationSettings
-          });
-        },
-        onEnterBack: () => {
-          gsap.to(image, {
-            opacity: 1,
-            scale: 1,
-            rotate: 0,
-            ...animationSettings
-          });
-        },
-        onLeaveBack: () => {
-          gsap.to(image, {
-            opacity: 0,
-            scale: 0.3,
-            rotate: 8,
-            ...animationSettings
-          });
-        }
+    });
+
+    // Parallax and rotation based on mouse movement
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let targetRotX = 0;
+    let targetRotY = 0;
+    let currentRotX = 0;
+    let currentRotY = 0;
+
+    const movementStrength = 200;
+    const rotationStrength = 8;
+    const ease = 0.04;
+
+    window.addEventListener("mousemove", (e) => {
+      const x = (e.clientX / window.innerWidth) - 0.5;
+      const y = (e.clientY / window.innerHeight) - 0.5;
+
+      targetX = x * movementStrength;
+      targetY = y * movementStrength;
+      targetRotY = x * rotationStrength;
+      targetRotX = -y * rotationStrength;
+    });
+
+    function animateMovement() {
+      currentX += (targetX - currentX) * ease;
+      currentY += (targetY - currentY) * ease;
+      currentRotX += (targetRotX - currentRotX) * ease;
+      currentRotY += (targetRotY - currentRotY) * ease;
+
+      gsap.set(image, {
+        x: currentX,
+        y: currentY,
+        rotateX: currentRotX,
+        rotateY: currentRotY,
+        transformPerspective: 200,
+        transformOrigin: "center"
       });
-  
-      // Parallax and rotation based on mouse movement
-      let targetX = 0;
-      let targetY = 0;
-      let currentX = 0;
-      let currentY = 0;
-      let targetRotX = 0;
-      let targetRotY = 0;
-      let currentRotX = 0;
-      let currentRotY = 0;
-  
-      const movementStrength = 200;
-      const rotationStrength = 8;
-      const ease = 0.04;
-  
-      let mouseMoveHandler = (e) => {
-        const x = (e.clientX / window.innerWidth) - 0.5;
-        const y = (e.clientY / window.innerHeight) - 0.5;
-  
-        targetX = x * movementStrength;
-        targetY = y * movementStrength;
-        targetRotY = x * rotationStrength;
-        targetRotX = -y * rotationStrength;
-      };
-  
-      window.addEventListener("mousemove", mouseMoveHandler);
-  
-      function animateMovement() {
-        currentX += (targetX - currentX) * ease;
-        currentY += (targetY - currentY) * ease;
-        currentRotX += (targetRotX - currentRotX) * ease;
-        currentRotY += (targetRotY - currentRotY) * ease;
-  
-        gsap.set(image, {
-          x: currentX,
-          y: currentY,
-          rotateX: currentRotX,
-          rotateY: currentRotY,
-          transformPerspective: 200,
-          transformOrigin: "center"
-        });
-  
-        animationFrameId = requestAnimationFrame(animateMovement);
-      }
-  
-      let animationFrameId = requestAnimationFrame(animateMovement);
-  
-      // Cleanup function
-      const cleanup = () => {
-        if (scrollTriggerInstance) {
-          scrollTriggerInstance.kill();
-        }
-        window.removeEventListener("mousemove", mouseMoveHandler);
-        cancelAnimationFrame(animationFrameId);
-      };
-  
-      // Handle resize with throttling
-      let resizeTimeout;
-      const handleResize = () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          cleanup();
-          initializeHealingTabs();
-        }, 300);
-      };
-  
-      window.addEventListener("resize", handleResize);
+
+      requestAnimationFrame(animateMovement);
     }
-  }
+
+    animateMovement();
+}
   
-  // Initialize healing tabs with proper timing
-  async function initializeHealingTabsWithDelay() {
-    try {
-      // Wait for fonts to be ready
-      await document.fonts.ready;
-      
-      // Wait for DOM to be fully loaded
-      if (document.readyState !== 'complete') {
-        await new Promise(resolve => {
-          window.addEventListener('load', resolve, { once: true });
-        });
-      }
-      
-      // Additional wait to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Force layout recalculation
-      document.body.offsetHeight;
-      
-      // Now initialize healing tabs
-      initializeHealingTabs();
-    } catch (error) {
-      console.error('Error initializing healing tabs:', error);
-    }
+  // Initialize healing tabs immediately
+  function initializeHealingTabsWithDelay() {
+    // Force layout recalculation
+    document.body.offsetHeight;
+    
+    // Initialize healing tabs
+    initializeHealingTabs();
   }
   
   // Initial call with proper timing
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       initializeHealingTabsWithDelay();
-    }, 1000);
+    }, 500);
   });
   
   
@@ -545,91 +528,8 @@ function waitForGSAP() {
   });
   
   
-  /* ==============================================
-    Fixed Cinematic Section
-  ============================================== */
-  
-  
-  
-  // Initialize cinematic section with proper timing
-  async function initializeCinematicSection() {
-    try {
-      // Wait for fonts to be ready
-      await document.fonts.ready;
-      
-      // Wait for DOM to be fully loaded
-      if (document.readyState !== 'complete') {
-        await new Promise(resolve => {
-          window.addEventListener('load', resolve, { once: true });
-        });
-      }
-      
-      // Additional wait to ensure everything is rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const section = document.querySelector(".cinema-section");
-      const cinematic = section?.querySelector(".cinematic");
-      const text = cinematic?.querySelector(".running-text");
-      
-      if (!section || !cinematic || !text) {
-        console.warn("Cinematic section elements not found");
-        return;
-      }
-      
-      // Force layout recalculation
-      section.offsetHeight;
-      cinematic.offsetHeight;
-      text.offsetHeight;
-      
-      // Calculate the exact distance the text needs to move
-      const textHeight = text.scrollHeight;
-      const containerHeight = cinematic.clientHeight;
-      const scrollDistance = textHeight - containerHeight;
-      
-      if (scrollDistance <= 0) {
-        console.warn("No scroll distance calculated for cinematic section");
-        return;
-      }
-  
-      // Create ScrollTrigger for the running text animation with pin
-      ScrollTrigger.create({
-        trigger: section,
-        start: "bottom bottom",
-        end: "+=200%",
-        scrub: false,
-        pin: section,
-        pinSpacing: true,
-        onUpdate: (self) => {
-          const progress = self.progress;
-          gsap.set(text, {
-            y: -scrollDistance * progress
-          });
-          
-          // Only allow scrolling to continue after text animation is complete
-          if (progress >= 1) {
-            self.pin = null;
-            self.end = "bottom top";
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error initializing cinematic section:', error);
-    }
-  }
-  
-  // Call the function after page initialization
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      initializeCinematicSection();
-    }, 1000);
-  });
-  
-  
-  
-  
-  
-  
-  
+
+
   
   /* ==============================================
     FAQ Grid
@@ -1119,43 +1019,6 @@ function waitForGSAP() {
     });
       
   
-      
-  /* ==============================================
-    Navbar Show/Hide Logic
-  ============================================== */
-  
-  
-  /*
-  
-  const nav = document.querySelector(".logo");
-  let lastScrollTop = 0;
-  
-  window.addEventListener("scroll", function () {
-      const st = window.pageYOffset || document.documentElement.scrollTop;
-  
-      // Prevent navbar changes if the mobile menu is open
-      if (document.querySelector(".mobile-menu.open")) {
-          return;
-      }
-  
-      if (st > 20) {
-          nav.classList.add("fixed");
-      } else {
-          nav.classList.remove("fixed");
-          nav.classList.remove("scroll");
-      }
-  
-      if (Math.abs(st - lastScrollTop) > 20) {
-          if (st > 100 && st > lastScrollTop) {
-              nav.classList.add("scroll");
-          } else if (st > 100 && st < lastScrollTop) {
-              nav.classList.remove("scroll");
-          }
-          lastScrollTop = st;
-      }
-  });
-  */
-  
     
   /* ==============================================
      Slider Gallery (Multiple Instances)
@@ -1534,11 +1397,7 @@ initSmoothScroll();
   }
   
   
-  
-  function initVWFontZoomSafeForGSAP() {
 
-
-  }
   
   window.addEventListener('DOMContentLoaded', initVWFontZoomSafeForGSAP);
   
@@ -1548,3 +1407,7 @@ initSmoothScroll();
       ScrollTrigger.refresh();
     }, 1000);
   });
+
+
+
+
