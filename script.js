@@ -40,38 +40,6 @@ function waitForGSAP() {
     });
   }
   
-  // Wait for specific elements to be ready
-  async function waitForElements() {
-    const requiredElements = [
-      '.hero',
-      '.testimonial',
-      '.tab-overlay-section',
-      '.cinema-section',
-      '.slider'
-    ];
-    
-    let attempts = 0;
-    const maxAttempts = 50; // 5 seconds total
-    
-    while (attempts < maxAttempts) {
-      const missingElements = requiredElements.filter(selector => 
-        !document.querySelector(selector) || 
-        document.querySelector(selector).offsetHeight === 0
-      );
-      
-      if (missingElements.length === 0) {
-        console.log('All required elements are ready');
-        return true;
-      }
-      
-      console.log(`Waiting for elements: ${missingElements.join(', ')}`);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      attempts++;
-    }
-    
-    console.warn('Some elements may not be ready:', requiredElements);
-    return false;
-  }
 
   // Initialize the page
   async function initializePage() {
@@ -115,18 +83,6 @@ function waitForGSAP() {
       document.addEventListener('DOMContentLoaded', resolve);
     });
   }
-      
-      // Short wait for elements
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Additional wait to ensure everything is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Force multiple layout recalculations
-      for (let i = 0; i < 3; i++) {
-        document.body.offsetHeight;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
       
       // Refresh ScrollTrigger to recalculate positions
       ScrollTrigger.refresh();
@@ -174,7 +130,7 @@ function waitForGSAP() {
       await initializeSplitTextAnimations();
       
       // Initialize testimonials slider
-      await initializeTestimonialsSlider();
+      initializeTestimonialsSlider();
       
       // Final ScrollTrigger refresh after everything is initialized
       setTimeout(() => {
@@ -255,6 +211,15 @@ function waitForGSAP() {
   
   // Start initialization when the script loads
   masterInitialization();
+  
+  // Also initialize testimonials slider immediately when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeTestimonialsSlider();
+    });
+  } else {
+    initializeTestimonialsSlider();
+  }
   
   /* ==============================================
     Gsap Animations
@@ -412,7 +377,7 @@ function waitForGSAP() {
   
       let scrollTriggerInstance = ScrollTrigger.create({
         trigger: ".tab-overlay-section", 
-        start: "center -50%",
+        start: "bottom 50%",
         end: "bottom -60%",
         //markers:true,
         onEnter: () => {
@@ -876,126 +841,96 @@ function waitForGSAP() {
   ============================================== */
   
   
-  // Initialize testimonials slider after DOM content is loaded
-  async function initializeTestimonialsSlider() {
-    try {
-      // Wait for DOM content to be loaded (skip videos and heavy resources)
-      if (document.readyState === 'loading') {
-        await new Promise(resolve => {
-          document.addEventListener('DOMContentLoaded', resolve);
-        });
-      }
-      
-      // Wait for fonts to load (with timeout)
-      try {
-        await Promise.race([
-          document.fonts.ready,
-          new Promise(resolve => setTimeout(resolve, 1000))
-        ]);
-      } catch (error) {
-        console.warn('Font loading timeout');
-      }
-      
-      // Short wait for elements
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const testimonials = document.querySelectorAll('.testimonial');
-      const backgroundImages = document.querySelectorAll('.testimonial-image');
-      const prevBtn = document.querySelector('.arrow-back');
-      const nextBtn = document.querySelector('.arrow-next');
-      const progressBar = document.querySelector('.progress-bar');
-      
-      if (testimonials.length === 0) {
-        console.warn("No testimonials found");
-        return;
-      }
-      
-      let currentIndex = 0;
-      const totalSlides = testimonials.length;
-      
-      // Initialize first slide
-      updateActiveSlide();
+  // Initialize testimonials slider immediately
+  function initializeTestimonialsSlider() {
+    const testimonials = document.querySelectorAll('.testimonial');
+    const backgroundImages = document.querySelectorAll('.testimonial-image');
+    const prevBtn = document.querySelector('.arrow-back');
+    const nextBtn = document.querySelector('.arrow-next');
+    const progressBar = document.querySelector('.progress-bar');
+    
+    if (testimonials.length === 0) {
+      console.warn("No testimonials found");
+      return;
+    }
+    
+    let currentIndex = 0;
+    const totalSlides = testimonials.length;
     
     function updateActiveSlide() {
-        // Update testimonials
-        testimonials.forEach((testimonial, index) => {
-            if (index === currentIndex) {
-                testimonial.classList.add('active');
-                testimonial.style.opacity = '1';
-                testimonial.style.transform = 'translate(-0%, -0%) scale(1)';
-            } else {
-                testimonial.classList.remove('active');
-                testimonial.style.opacity = '0';
-                testimonial.style.transform = 'translate(-0%, -0%) scale(0.95)';
-            }
-        });
-        
-        // Update background images
-        backgroundImages.forEach((image, index) => {
-            if (index === currentIndex) {
-                image.classList.add('active');
-            } else {
-                image.classList.remove('active');
-            }
-        });
-        
-        // Reset progress bar
-        if (progressBar) progressBar.style.width = '0%';
+      // Update testimonials
+      testimonials.forEach((testimonial, index) => {
+        if (index === currentIndex) {
+          testimonial.classList.add('active');
+          testimonial.style.opacity = '1';
+          testimonial.style.transform = 'translate(-0%, -0%) scale(1)';
+        } else {
+          testimonial.classList.remove('active');
+          testimonial.style.opacity = '0';
+          testimonial.style.transform = 'translate(-0%, -0%) scale(0.95)';
+        }
+      });
+      
+      // Update background images
+      backgroundImages.forEach((image, index) => {
+        if (index === currentIndex) {
+          image.classList.add('active');
+        } else {
+          image.classList.remove('active');
+        }
+      });
+      
+      // Reset progress bar
+      if (progressBar) progressBar.style.width = '0%';
 
-        // Split text animation for active testimonial
-        const activeTestimonial = testimonials[currentIndex];
-        const textElements = activeTestimonial.querySelectorAll('h4, h5, h6, p, .testimonial-text');
-        textElements.forEach(el => {
-            // Remove any previous split (if using SplitText plugin)
-            if (el._splitText) {
-                el._splitText.revert();
-            }
-            // Split and animate
-            const split = new SplitText(el, { type: "lines", linesClass: "line", forceClass: "split-text" });
-            el._splitText = split;
-            gsap.set(split.lines, {
-                visibility: "visible",
-                yPercent: 100,
-                clipPath: "inset(0% 0% 100% 0%)",
-                opacity: 1
-            });
-            gsap.to(split.lines, {
-                yPercent: 0,
-                clipPath: "inset(-20% -10% -20% 0%)",
-                opacity: 1,
-                stagger: 0.12,
-                duration: 1.6,
-                ease: "power3.out"
-            });
-        });
+      // Simple text animation for active testimonial (works on both mobile and desktop)
+      const activeTestimonial = testimonials[currentIndex];
+      const textElements = activeTestimonial.querySelectorAll('h4, h5, h6, p, .testimonial-text');
+      textElements.forEach(el => {
+        // Simple fade-in animation instead of SplitText
+        gsap.fromTo(el, 
+          { opacity: 0, y: 20 },
+          { 
+            opacity: 1, 
+            y: 0, 
+            duration: 0.6, 
+            ease: "power2.out",
+            stagger: 0.1
+          }
+        );
+      });
     }
     
     function nextSlide() {
-        currentIndex = (currentIndex + 1) % totalSlides;
-        updateActiveSlide();
+      currentIndex = (currentIndex + 1) % totalSlides;
+      updateActiveSlide();
     }
     
     function prevSlide() {
-        currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-        updateActiveSlide();
+      currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+      updateActiveSlide();
     }
     
     // Add event listeners to buttons
-    nextBtn.addEventListener('click', () => {
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
         nextSlide();
-    });
+      });
+    }
     
-    prevBtn.addEventListener('click', () => {
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
         prevSlide();
-    });
+      });
+    }
     
     // Add keyboard navigation
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowRight') {
-            prevSlide(); // RTL layout
-        } else if (e.key === 'ArrowLeft') {
-            nextSlide(); // RTL layout
-        }
+      if (e.key === 'ArrowRight') {
+        prevSlide(); // RTL layout
+      } else if (e.key === 'ArrowLeft') {
+        nextSlide(); // RTL layout
+      }
     });
     
     // Add touch swipe support
@@ -1003,31 +938,29 @@ function waitForGSAP() {
     let touchEndX = 0;
     
     document.addEventListener('touchstart', function(e) {
-        touchStartX = e.changedTouches[0].screenX;
-        // resetProgress(); // Pause progress when touching
+      touchStartX = e.changedTouches[0].screenX;
     }, false);
     
     document.addEventListener('touchend', function(e) {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
     }, false);
     
     function handleSwipe() {
-        const swipeThreshold = 50;
-        const diff = touchStartX - touchEndX;
-        
-        if (Math.abs(diff) > swipeThreshold) {
-            if (diff > 0) {
-                nextSlide();
-            } else {
-                prevSlide();
-            }
-        } // else do nothing
+      const swipeThreshold = 50;
+      const diff = touchStartX - touchEndX;
+      
+      if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          nextSlide();
+        } else {
+          prevSlide();
+        }
+      }
     }
     
-    } catch (error) {
-      console.error('Error initializing testimonials slider:', error);
-    }
+    // Initialize first slide
+    updateActiveSlide();
   }
 
   
@@ -1604,35 +1537,7 @@ initSmoothScroll();
   
   function initVWFontZoomSafeForGSAP() {
 
-    /*
-    const elements = [];
-    const baseZoom = window.devicePixelRatio;
-    const baseWidth = window.innerWidth;
-  
-    // Collect elements and store their original vw font size
-    document.querySelectorAll('body *:not(img):not(video):not(canvas):not(iframe)').forEach(el => {
-      const computed = getComputedStyle(el);
-      const fontSizePx = parseFloat(computed.fontSize);
-      const vw = (fontSizePx / baseWidth) * 100;
-  
-      if (vw > 0 && vw < 20) {
-        elements.push({ el, baseVW: vw });
-      }
-    });
-  
-    function applyZoom() {
-      const currentZoom = window.devicePixelRatio;
-      const scale = currentZoom / baseZoom;
-  
-      elements.forEach(({ el, baseVW }) => {
-        el.style.setProperty('font-size', `${baseVW * scale}vw`, 'important');
-      });
-    }
-  
-    window.addEventListener('resize', applyZoom);
-    applyZoom();
 
-    */
   }
   
   window.addEventListener('DOMContentLoaded', initVWFontZoomSafeForGSAP);
