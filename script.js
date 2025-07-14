@@ -40,6 +40,39 @@ function waitForGSAP() {
     });
   }
   
+  // Wait for specific elements to be ready
+  async function waitForElements() {
+    const requiredElements = [
+      '.hero',
+      '.testimonial',
+      '.tab-overlay-section',
+      '.cinema-section',
+      '.slider'
+    ];
+    
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds total
+    
+    while (attempts < maxAttempts) {
+      const missingElements = requiredElements.filter(selector => 
+        !document.querySelector(selector) || 
+        document.querySelector(selector).offsetHeight === 0
+      );
+      
+      if (missingElements.length === 0) {
+        console.log('All required elements are ready');
+        return true;
+      }
+      
+      console.log(`Waiting for elements: ${missingElements.join(', ')}`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    
+    console.warn('Some elements may not be ready:', requiredElements);
+    return false;
+  }
+
   // Initialize the page
   async function initializePage() {
     try {
@@ -79,11 +112,17 @@ function waitForGSAP() {
       // Wait for complete page load (including all images, scripts, etc.)
       await waitForCompleteLoad();
       
-      // Additional wait to ensure everything is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for specific elements to be ready
+      await waitForElements();
       
-      // Force a layout recalculation to ensure all elements have their final dimensions
-      document.body.offsetHeight;
+      // Additional wait to ensure everything is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Force multiple layout recalculations
+      for (let i = 0; i < 3; i++) {
+        document.body.offsetHeight;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
       
       // Refresh ScrollTrigger to recalculate positions
       ScrollTrigger.refresh();
@@ -112,29 +151,36 @@ function waitForGSAP() {
       });
   
       // Initialize all other functionality after overlay is removed
-   if (window.innerWidth < 768) {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
+      if (window.innerWidth < 768) {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            initializeAnimations();
+          }, 300); // adjust if needed
+        });
+      } else {
         initializeAnimations();
-      }, 300); // adjust if needed
-    });
-  } else {
-    initializeAnimations();
-  }
+      }
+      
       initializeSliders();
       initializeSmoothScroll();
       initializeGridOverlay();
       initializeResponsiveBehavior();
       
       // Initialize SplitText animations after everything else
-      initializeSplitTextAnimations();
+      await initializeSplitTextAnimations();
       
       // Initialize testimonials slider
-      initializeTestimonialsSlider();
+      await initializeTestimonialsSlider();
       
       // Final ScrollTrigger refresh after everything is initialized
       setTimeout(() => {
         ScrollTrigger.refresh();
+        
+        // Final check to ensure everything is working
+        setTimeout(() => {
+          console.log('Final ScrollTrigger refresh');
+          ScrollTrigger.refresh();
+        }, 1000);
       }, 500);
 
       
@@ -168,8 +214,44 @@ function waitForGSAP() {
     // Responsive behavior is already defined globally
   }
   
+  // Master initialization function that ensures proper loading order
+  async function masterInitialization() {
+    try {
+      console.log('Starting master initialization...');
+      
+      // Wait for everything to be ready
+      await waitForGSAP();
+      await waitForCompleteLoad();
+      await document.fonts.ready;
+      
+      // Wait for window load event
+      if (document.readyState !== 'complete') {
+        await new Promise(resolve => {
+          window.addEventListener('load', resolve, { once: true });
+        });
+      }
+      
+      // Force multiple layout recalculations with longer delays
+      for (let i = 0; i < 5; i++) {
+        document.body.offsetHeight;
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Additional wait to ensure everything is truly ready
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Start the main initialization
+      await initializePage();
+      
+      console.log('Master initialization complete');
+      
+    } catch (error) {
+      console.error('Error in master initialization:', error);
+    }
+  }
+  
   // Start initialization when the script loads
-  initializePage();
+  masterInitialization();
   
   /* ==============================================
     Gsap Animations
@@ -793,20 +875,29 @@ function waitForGSAP() {
   
   // Initialize testimonials slider after DOM content is loaded
   async function initializeTestimonialsSlider() {
-    await waitForCompleteLoad();
-    await document.fonts.ready;
-    
-    const testimonials = document.querySelectorAll('.testimonial');
-    const backgroundImages = document.querySelectorAll('.testimonial-image');
-    const prevBtn = document.querySelector('.arrow-back');
-    const nextBtn = document.querySelector('.arrow-next');
-    const progressBar = document.querySelector('.progress-bar');
-    
-    let currentIndex = 0;
-    const totalSlides = testimonials.length;
-    
-    // Initialize first slide
-    updateActiveSlide();
+    try {
+      await waitForCompleteLoad();
+      await document.fonts.ready;
+      
+      // Additional wait to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const testimonials = document.querySelectorAll('.testimonial');
+      const backgroundImages = document.querySelectorAll('.testimonial-image');
+      const prevBtn = document.querySelector('.arrow-back');
+      const nextBtn = document.querySelector('.arrow-next');
+      const progressBar = document.querySelector('.progress-bar');
+      
+      if (testimonials.length === 0) {
+        console.warn("No testimonials found");
+        return;
+      }
+      
+      let currentIndex = 0;
+      const totalSlides = testimonials.length;
+      
+      // Initialize first slide
+      updateActiveSlide();
     
     function updateActiveSlide() {
         // Update testimonials
@@ -916,6 +1007,10 @@ function waitForGSAP() {
             }
         } // else do nothing
     }
+    
+    } catch (error) {
+      console.error('Error initializing testimonials slider:', error);
+    }
   }
 
   
@@ -925,72 +1020,127 @@ function waitForGSAP() {
   
   // Initialize SplitText animations after DOM content is loaded
   async function initializeSplitTextAnimations() {
-    const newContent = document.querySelector("body");
-    if (!newContent) return;
-  
-    // Wait for DOM content to be loaded
-    await waitForCompleteLoad();
+    try {
+      const newContent = document.querySelector("body");
+      if (!newContent) return;
     
-    // Wait for fonts to load
-    await document.fonts.ready;
+      // Wait for DOM content to be loaded
+      await waitForCompleteLoad();
+      
+      // Wait for fonts to load
+      await document.fonts.ready;
+      
+      // Wait for specific elements to be ready
+      await waitForElements();
+      
+      // Additional wait to ensure everything is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Force multiple layout recalculations
+      for (let i = 0; i < 3; i++) {
+        document.body.offsetHeight;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
     
-    // Additional wait to ensure everything is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 200));
-  
-    const elements = [...newContent.querySelectorAll(
-      "h1, h2, h3, h4, h5, h6, p, .btn, .nav"
-    )].filter(el => 
-      !el.matches(".running-text h6") &&
-      !el.closest('.no-global-split')
-    );
+      const elements = [...newContent.querySelectorAll(
+        "h1, h2, h3, h4, h5, h6, p, .btn, .nav"
+      )].filter(el => 
+        !el.matches(".running-text h6") &&
+        !el.closest('.no-global-split') &&
+        el.offsetHeight > 0 && // Only animate visible elements
+        el.offsetWidth > 0 &&
+        el.textContent.trim().length > 0 && // Only animate elements with text
+        window.getComputedStyle(el).display !== 'none' && // Only animate visible elements
+        window.getComputedStyle(el).visibility !== 'hidden'
+      );
 
-    let masterDelay = 0.5;
+      if (elements.length === 0) {
+        console.warn("No elements found for SplitText animation");
+        return;
+      }
 
-    elements.forEach((el) => {
-      if (el.closest(".image-container")) return;
+      let masterDelay = 0.5;
 
-      el.style.display = "block";
-      el.offsetHeight;
+      elements.forEach((el) => {
+        if (el.closest(".image-container")) return;
 
-      const split = new SplitText(el, { 
-        type: "lines", 
-        linesClass: "line",
-        forceClass: "split-text"
-      });
+        // Ensure element is properly rendered
+        el.style.display = "block";
+        el.offsetHeight; // Force reflow
 
-      split.lines.forEach((line) => {
-        line.style.display = "inline-block";
-        line.style.width = "100%";
-        line.style.lineHeight = "unset";
-        line.style.visibility = "hidden";
-      });
+        try {
+          // Additional check to ensure element is truly ready
+          if (!el.textContent.trim() || el.offsetHeight === 0) {
+            console.warn("Element not ready for SplitText:", el);
+            return;
+          }
+          
+          const split = new SplitText(el, { 
+            type: "lines", 
+            linesClass: "line",
+            forceClass: "split-text"
+          });
 
-      gsap.set(split.lines, {
-        visibility: "visible",
-        yPercent: 100,
-        clipPath: "inset(0% 0% 100% 0%)",
-        opacity: 1
-      });
+          if (!split.lines || split.lines.length === 0) {
+            console.warn("SplitText failed for element:", el);
+            return;
+          }
 
-      gsap.to(split.lines, {
-        yPercent: 0,
-        clipPath: "inset(-20% -10% -20% 0%)",
-        opacity: 1,
-        stagger: 0.12,
-        duration: 1.6,
-        delay: el.closest(".hero") ? masterDelay : 0,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: el,
-          start: window.innerWidth < 768 ? "top 80%" : "top 100%",
-          end: "bottom 100%",
-          toggleActions: "play none none none",
-          once: true
+          split.lines.forEach((line) => {
+            line.style.display = "inline-block";
+            line.style.width = "100%";
+            line.style.lineHeight = "unset";
+            line.style.visibility = "hidden";
+          });
+
+          gsap.set(split.lines, {
+            visibility: "visible",
+            yPercent: 100,
+            clipPath: "inset(0% 0% 100% 0%)",
+            opacity: 1
+          });
+
+          gsap.to(split.lines, {
+            yPercent: 0,
+            clipPath: "inset(-20% -10% -20% 0%)",
+            opacity: 1,
+            stagger: 0.12,
+            duration: 1.6,
+            delay: el.closest(".hero") ? masterDelay : 0,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: el,
+              start: window.innerWidth < 768 ? "top 80%" : "top 100%",
+              end: "bottom 100%",
+              toggleActions: "play none none none",
+              once: true
+            }
+          });
+
+          if (el.closest(".hero")) masterDelay += 0.25;
+        } catch (error) {
+          console.error("Error creating SplitText for element:", el, error);
         }
       });
-
-      if (el.closest(".hero")) masterDelay += 0.25;
-    });
+      
+      // Refresh ScrollTrigger after SplitText animations are created
+      setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error initializing SplitText animations:', error);
+      
+      // Retry once after a delay if it failed
+      setTimeout(async () => {
+        try {
+          console.log('Retrying SplitText initialization...');
+          await initializeSplitTextAnimations();
+        } catch (retryError) {
+          console.error('SplitText retry also failed:', retryError);
+        }
+      }, 1000);
+    }
   }
   
   
