@@ -80,7 +80,13 @@ function waitForGSAP() {
       await waitForCompleteLoad();
       
       // Additional wait to ensure everything is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Force a layout recalculation to ensure all elements have their final dimensions
+      document.body.offsetHeight;
+      
+      // Refresh ScrollTrigger to recalculate positions
+      ScrollTrigger.refresh();
   
       // Initialize animations
       gsap.set("body", { opacity: 0, visibility: "hidden" });
@@ -96,7 +102,13 @@ function waitForGSAP() {
         opacity: 0,
         duration: 1.5,
         ease: "power4.inOut",
-        onComplete: () => overlay.remove()
+        onComplete: () => {
+          overlay.remove();
+          // Refresh ScrollTrigger again after overlay is removed
+          setTimeout(() => {
+            ScrollTrigger.refresh();
+          }, 100);
+        }
       });
   
       // Initialize all other functionality after overlay is removed
@@ -119,6 +131,11 @@ function waitForGSAP() {
       
       // Initialize testimonials slider
       initializeTestimonialsSlider();
+      
+      // Final ScrollTrigger refresh after everything is initialized
+      setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 500);
 
       
   
@@ -282,6 +299,8 @@ function waitForGSAP() {
   function initializeHealingTabs() {
     if (window.innerWidth > 768) {
       const image = document.querySelector(".image-content");
+      
+      if (!image) return;
   
       // Initial fixed position and hidden state
       image.style.position = "fixed";
@@ -293,6 +312,18 @@ function waitForGSAP() {
         duration: 0.7,
         ease: "power4.out"
       };
+  
+      // Wait for the trigger element to be available and properly sized
+      const triggerElement = document.querySelector(".tab-overlay-section");
+      if (!triggerElement) return;
+      
+      // Ensure the trigger element has proper dimensions
+      const rect = triggerElement.getBoundingClientRect();
+      if (rect.height === 0) {
+        // If element has no height, wait a bit and retry
+        setTimeout(() => initializeHealingTabs(), 100);
+        return;
+      }
   
       let scrollTriggerInstance = ScrollTrigger.create({
         trigger: ".tab-overlay-section", 
@@ -402,8 +433,38 @@ function waitForGSAP() {
     }
   }
   
-  // Initial call
-  initializeHealingTabs();
+  // Initialize healing tabs with proper timing
+  async function initializeHealingTabsWithDelay() {
+    try {
+      // Wait for fonts to be ready
+      await document.fonts.ready;
+      
+      // Wait for DOM to be fully loaded
+      if (document.readyState !== 'complete') {
+        await new Promise(resolve => {
+          window.addEventListener('load', resolve, { once: true });
+        });
+      }
+      
+      // Additional wait to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force layout recalculation
+      document.body.offsetHeight;
+      
+      // Now initialize healing tabs
+      initializeHealingTabs();
+    } catch (error) {
+      console.error('Error initializing healing tabs:', error);
+    }
+  }
+  
+  // Initial call with proper timing
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      initializeHealingTabsWithDelay();
+    }, 1000);
+  });
   
   
   /* ==============================================
@@ -440,16 +501,45 @@ function waitForGSAP() {
   
   
   
-  document.fonts.ready.then(() => {
-    setTimeout(() => {
+  // Initialize cinematic section with proper timing
+  async function initializeCinematicSection() {
+    try {
+      // Wait for fonts to be ready
+      await document.fonts.ready;
+      
+      // Wait for DOM to be fully loaded
+      if (document.readyState !== 'complete') {
+        await new Promise(resolve => {
+          window.addEventListener('load', resolve, { once: true });
+        });
+      }
+      
+      // Additional wait to ensure everything is rendered
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const section = document.querySelector(".cinema-section");
-      const cinematic = section.querySelector(".cinematic");
-      const text = cinematic.querySelector(".running-text");
-  
+      const cinematic = section?.querySelector(".cinematic");
+      const text = cinematic?.querySelector(".running-text");
+      
+      if (!section || !cinematic || !text) {
+        console.warn("Cinematic section elements not found");
+        return;
+      }
+      
+      // Force layout recalculation
+      section.offsetHeight;
+      cinematic.offsetHeight;
+      text.offsetHeight;
+      
       // Calculate the exact distance the text needs to move
       const textHeight = text.scrollHeight;
       const containerHeight = cinematic.clientHeight;
       const scrollDistance = textHeight - containerHeight;
+      
+      if (scrollDistance <= 0) {
+        console.warn("No scroll distance calculated for cinematic section");
+        return;
+      }
   
       // Create ScrollTrigger for the running text animation with pin
       ScrollTrigger.create({
@@ -472,7 +562,16 @@ function waitForGSAP() {
           }
         }
       });
-    }, 100);
+    } catch (error) {
+      console.error('Error initializing cinematic section:', error);
+    }
+  }
+  
+  // Call the function after page initialization
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      initializeCinematicSection();
+    }, 1000);
   });
   
   
@@ -1368,3 +1467,10 @@ initSmoothScroll();
   }
   
   window.addEventListener('DOMContentLoaded', initVWFontZoomSafeForGSAP);
+  
+  // Final ScrollTrigger refresh after window load
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 1000);
+  });
